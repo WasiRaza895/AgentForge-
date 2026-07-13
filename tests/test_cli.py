@@ -21,7 +21,12 @@ def test_cli_doctor():
     assert result.exit_code == 0
     assert "System Environment Diagnostics" in result.output
 
-def test_cli_vault():
+def test_cli_vault(tmp_path, monkeypatch):
+    # Keep test credentials isolated from the developer's real vault.
+    monkeypatch.setattr(
+        "agentforge.utils.get_config_dir",
+        lambda: tmp_path / ".agentforge",
+    )
     runner = CliRunner()
     
     # Test setting a credential

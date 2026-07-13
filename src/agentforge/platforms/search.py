@@ -64,72 +64,41 @@ class SearchPlatform(BasePlatform):
                     return [{"error": f"Search failed. HTTP Status: {response.status_code}"}]
                 
                 results = []
-                # DuckDuckGo HTML search result extraction using regex
-                # Results block format: <a class="result__url" href="..."> ... </a>
-                # Result snippet class="result__snippet"
-                blocks = re.findall(
-                    r'<a class="result__snippet"[^>]*href="([^"]+)"[^>]*>.*?</a>|<div class="result__snippet">([^<]+)</div>',
-                    response.text,
-                    re.DOTALL
-                )
-                
-                # Alternate robust parsing for DDG HTML:
-                titles_urls = re.findall(
-                    r'<a class="result__snip"[^>]*></a>.*?<a class="result__url" href="([^"]+)">([^<]+)</a>',
-                    response.text,
-                    re.DOTALL
-                )
-                
-                # Parse all results
-                # Let's do a simple regex that finds the links and snippets:
-                matches = re.findall(
-                    r'<td class="result-vertical">.*?<a class="result__snippet"[^>]*href="([^"]+)".*?>(.*?)</a>.*?<a class="result__url"[^>]*>(.*?)</a>',
-                    response.text,
-                    re.DOTALL
-                )
-                
-                # Fallback simple search link extraction
-                links = re.findall(r'href="([^"]+)" class="result__url"', response.text)
-                titles = re.findall(r'class="result__snippet"[^>]*>([^<]+)</a>', response.text)
-                snippets = re.findall(r'<a class="result__snippet"[^>]*>([^<]+)</a>', response.text)
-                
-                # A robust regex for DDG HTML elements:
-                # <a class="result__a" href="URL">TITLE</a>
-                # <a class="result__snippet" href="URL">SNIPPET</a>
-                ddg_results = re.findall(
-                    r'<a class="result__a" href="([^"]+)">([^<]+)</a>.*?<a class="result__snippet"[^>]*>([^<]+)</a>',
-                    response.text,
-                    re.DOTALL
-                )
-                
-                for url, title, snippet in ddg_results[:limit]:
+                blocks = response.text.split('class="result results_links')[1:]
+                for block in blocks[:limit]:
+                    # Extract link and title
+                    link_title_match = re.search(r'<a[^>]*class="result__a"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', block, re.DOTALL)
+                    if not link_title_match:
+                        continue
+
+                    href = link_title_match.group(1)
+                    title = link_title_match.group(2)
+
+                    # Clean title HTML tags (e.g. <b>)
+                    title = re.sub(r'<[^>]*>', '', title).strip()
+
                     # Clean up URL redirects (DDG wraps them sometimes: //duckduckgo.com/l/?uddg=URL)
-                    clean_url = url
-                    if "uddg=" in url:
-                        uddg_part = url.split("uddg=")[1].split("&")[0]
-                        from urllib.parse import unquote
-                        clean_url = unquote(uddg_part)
+                    clean_url = href
+                    if "uddg=" in href:
+                        try:
+                            uddg_part = href.split("uddg=")[1].split("&")[0]
+                            from urllib.parse import unquote
+                            clean_url = unquote(uddg_part)
+                        except Exception:
+                            pass
+
+                    # Extract snippet
+                    snippet_match = re.search(r'<a[^>]*class="result__snippet"[^>]*>(.*?)</a>|<div class="result__snippet"[^>]*>(.*?)</div>', block, re.DOTALL)
+                    snippet = "No snippet available."
+                    if snippet_match:
+                        raw_snippet = snippet_match.group(1) or snippet_match.group(2) or ""
+                        snippet = re.sub(r'<[^>]*>', '', raw_snippet).strip()
                         
                     results.append({
                         "title": sanitize_text(title),
                         "url": clean_url,
                         "snippet": sanitize_text(snippet)
                     })
-                
-                # If regex fails, let's look for titles and links
-                if not results:
-                    links_titles = re.findall(r'<a class="result__a" href="([^"]+)">([^<]+)</a>', response.text)
-                    for url, title in links_titles[:limit]:
-                        clean_url = url
-                        if "uddg=" in url:
-                            uddg_part = url.split("uddg=")[1].split("&")[0]
-                            from urllib.parse import unquote
-                            clean_url = unquote(uddg_part)
-                        results.append({
-                            "title": sanitize_text(title),
-                            "url": clean_url,
-                            "snippet": "No snippet available."
-                        })
                         
                 return results if results else [{"error": "No search results found."}]
         except Exception as e:

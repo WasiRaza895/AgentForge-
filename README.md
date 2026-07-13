@@ -1,253 +1,177 @@
 # 🔨 AgentForge
 
 <p align="center">
-  <strong>Give your AI agent hands to shape the internet — not just eyes to read it.</strong>
+  <strong>Give your AI agent hands to act on the internet—not just eyes to read it.</strong>
 </p>
 
 <p align="center">
-  Read tweets. Post threads. Monitor competitors. Automate workflows.<br>
-  One CLI. Zero API fees. Works natively with Claude Code, Cursor, Windsurf, OpenClaw & more.
+  A local-first Python CLI for reading, writing, searching, notifying, and running<br />
+  multi-platform workflows from one consistent interface.
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License" /></a>
-  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.10+-green.svg?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+" /></a>
+  <a href="https://github.com/WasiRaza895/AgentForge-/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/WasiRaza895/AgentForge-/ci.yml?branch=main&style=flat-square&label=tests"></a>
+  <a href="https://www.python.org/"><img alt="Python 3.10+" src="https://img.shields.io/badge/python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-blue?style=flat-square"></a>
+  <a href="https://github.com/WasiRaza895/AgentForge-/stargazers"><img alt="GitHub stars" src="https://img.shields.io/github/stars/WasiRaza895/AgentForge-?style=flat-square"></a>
 </p>
 
----
+> [!IMPORTANT]
+> AgentForge is alpha software. Read-only commands are the safest place to start. Review every write action and workflow before using real accounts.
 
-## 📖 Table of Contents
-- [The Problem](#the-problem)
-- [The Solution](#the-solution)
-- [Feature Comparison](#feature-comparison)
-- [Supported Platforms](#supported-platforms)
-- [Quick Start](#quick-start)
-- [Usage Examples](#usage-examples)
-- [Workflow Pipelines (YAML)](#workflow-pipelines-yaml)
-- [Automated Keyword Monitoring](#automated-keyword-monitoring)
-- [Notification Dispatcher](#notification-dispatcher)
-- [Secure Credential Vault](#secure-credential-vault)
-- [For AI Agents (SKILL.md)](#for-ai-agents-skillmd)
-- [Plugin System](#plugin-system)
-- [License](#license)
+## Why AgentForge?
 
----
+Agent tools often stop at research. AgentForge adds a shared command surface for actions: search the web, read feeds, create GitHub issues, send notifications, post updates, and chain steps together in YAML. Credentials stay in a local encrypted vault, and structured output makes commands easy to consume from scripts and AI coding tools.
 
-## The Problem
+- **One CLI:** a consistent interface across 12 platform adapters.
+- **Read and write:** move from gathering context to taking an approved action.
+- **Composable workflows:** connect platform actions with declarative YAML pipelines.
+- **Local-first credentials:** encrypt secrets at rest instead of putting them in workflow files.
+- **Agent-friendly output:** render results as text, JSON, CSV, or Markdown.
+- **Extensible:** add custom platform adapters through the plugin loader.
 
-Existing tools (like Agent-Reach) give your AI agent **eyes** to read the internet.
-But reading is only half the story.
+## Quick start
 
-- Your agent can search Twitter — *but it cannot post a thread or reply.*
-- Your agent can read Reddit — *but it cannot comment or engage.*
-- Your agent can read GitHub issues — *but it cannot create one.*
-- Your agent can do research — *but it cannot send a Slack summary, Discord alert, or email digest.*
-
-**AgentForge gives your agent HANDS.**
-
----
-
-## The Solution
-
-AgentForge is a local-first, zero-fee command-line interface (CLI) and Model Context Protocol (MCP) server that empowers AI agents to perform bidirectional actions (both **READ** and **WRITE**) across 12+ platforms, coordinate them in declarative YAML pipelines, and monitor keywords on cron schedules.
-
----
-
-## Feature Comparison
-
-| Capability | Agent-Reach | **AgentForge** |
-|---|---|---|
-| 📖 Read Twitter, Reddit, YouTube | ✅ | ✅ |
-| 🌐 General web scraping & search | ✅ | ✅ |
-| ✍️ Write & reply on Twitter/X | ❌ | **✅ (Tweepy / xreach)** |
-| ✍️ Submit & reply on Reddit | ❌ | **✅ (PRAW)** |
-| ✍️ Create issues, PRs, comments on GitHub | ❌ | **✅ (gh CLI)** |
-| ✍️ Post updates to LinkedIn | ❌ | **✅ (REST API)** |
-| 📧 Send SMTP Emails (HTML, CC) | ❌ | **✅ (smtplib)** |
-| 💬 Slack & Discord notification webhooks | ❌ | **✅ (httpx)** |
-| 💬 Telegram message sending | ❌ | **✅ (Bot API)** |
-| 🔗 Cross-platform YAML workflows | ❌ | **✅ (Pipeline Engine)** |
-| 👁️ Scheduled keyword monitoring | ❌ | **✅ (Scheduler)** |
-| 🔐 Encrypted credential storage | ❌ | **✅ (AES/Fernet Vault)** |
-| 🔌 Dynamic plugin support | ❌ | **✅ (Loader)** |
-
----
-
-## Supported Platforms
-
-| Platform | Read | Write | Search | Auth Method |
-|---|---|---|---|---|
-| **Web** | ✅ (Jina / direct) | ❌ | ❌ | None |
-| **Search** | ❌ | ❌ | ✅ (Exa / DDG) | Optional Exa API key |
-| **YouTube** | ✅ (yt-dlp) | ❌ | ✅ (yt-dlp) | None |
-| **RSS** | ✅ (feedparser) | ❌ | ❌ | None |
-| **GitHub** | ✅ (gh CLI) | ✅ (issue, PR, comment) | ✅ (gh CLI) | Optional Vault Token |
-| **Twitter/X** | ✅ (Nitter / xreach) | ✅ (post, reply) | ✅ (Nitter / xreach) | Optional API Keys |
-| **Reddit** | ✅ (JSON API) | ✅ (post, reply) | ✅ (JSON API) | Optional API Keys |
-| **LinkedIn** | ✅ (Jina Reader) | ✅ (shares) | ❌ | access_token / person_id |
-| **Slack** | ❌ | ✅ (webhooks) | ❌ | webhook_url |
-| **Discord** | ❌ | ✅ (webhooks) | ❌ | webhook_url |
-| **Email** | ❌ | ✅ (SMTP) | ❌ | host, port, user, pass |
-| **Telegram** | ❌ | ✅ (bot api) | ❌ | bot_token, chat_id |
-
----
-
-## Quick Start
-
-### 1. Installation
-Install AgentForge using `pip` or `uv`:
+AgentForge requires Python 3.10 or newer.
 
 ```bash
-pip install .
+git clone https://github.com/WasiRaza895/AgentForge-.git
+cd AgentForge-
+python -m venv .venv
 ```
 
-### 2. Auto-Install Dependencies
-Run `install` to let AgentForge detect your environment and pull missing CLI tools (like `yt-dlp` or `gh`):
+Activate the environment and install the project:
 
 ```bash
-agentforge install
-```
+# macOS/Linux
+source .venv/bin/activate
 
-### 3. Diagnostics Check
-Verify system status and platform configurations:
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
 
-```bash
+python -m pip install .
+agentforge --version
 agentforge doctor
 ```
 
----
+Try a read-only command:
 
-## Usage Examples
-
-### Web Search & Reading
 ```bash
-# Search the web using DuckDuckGo
-agentforge search "AI agents 2026"
-
-# Read web page content (clean markdown)
+agentforge search "open-source AI agent tools" --limit 5
 agentforge web https://example.com
+agentforge --output json rss https://hnrss.org/frontpage
 ```
 
-### GitHub Operations
+See the [installation guide](docs/install.md) and [quick-start guide](docs/quickstart.md) for more detail.
+
+## What can it connect to?
+
+| Platform | Read | Search | Write | Integration |
+|---|:---:|:---:|:---:|---|
+| Web | ✅ | — | — | Direct HTTP / Jina Reader |
+| Search | — | ✅ | — | DuckDuckGo / optional Exa |
+| YouTube | ✅ | ✅ | — | `yt-dlp` |
+| RSS / Atom | ✅ | — | — | `feedparser` |
+| GitHub | ✅ | ✅ | ✅ | GitHub CLI |
+| Twitter / X | ✅ | ✅ | ✅ | Nitter / `xreach` / API |
+| Reddit | ✅ | ✅ | ✅ | JSON API / PRAW |
+| LinkedIn | ✅ | — | ✅ | Jina Reader / REST API |
+| Slack | — | — | ✅ | Webhooks |
+| Discord | — | — | ✅ | Webhooks |
+| Telegram | — | — | ✅ | Bot API |
+| Email | — | — | ✅ | SMTP |
+
+Some capabilities require third-party CLI tools, API access, or platform credentials. Run `agentforge doctor` to see what is available on your machine.
+
+## Common commands
+
 ```bash
-# View repo details
+# GitHub
 agentforge github read owner/repo
+agentforge github create-issue owner/repo --title "Bug" --body "Details"
 
-# Create a new issue
-agentforge github create-issue owner/repo --title "Critical Bug" --body "Detailed explanation"
-
-# Comment on an issue
-agentforge github comment owner/repo --issue 123 --body "Working on this now!"
-```
-
-### Twitter / X
-```bash
-# Read a tweet
+# Social platforms
 agentforge twitter read https://twitter.com/user/status/123456
+agentforge reddit search "local AI agents" --sub LocalLLaMA
 
-# Post a tweet
-agentforge twitter post "AgentForge has officially launched! 🚀"
+# Notifications
+agentforge notify setup team-alerts --type slack --url "https://hooks.slack.com/..."
+agentforge notify send team-alerts "AgentForge workflow completed"
+
+# Local credentials (values are masked when listed)
+agentforge vault set twitter api_key "YOUR_API_KEY"
+agentforge vault list
 ```
 
----
+Use least-privilege credentials and never paste real tokens into committed scripts or issue reports.
 
-## Workflow Pipelines (YAML)
+## Workflow example
 
-Chaining actions across multiple platforms is easy with YAML pipelines.
+Create `daily_digest.yaml`:
 
-### Example: `daily_digest.yaml`
 ```yaml
-name: "Daily AI Research Digest"
+name: Daily AI research digest
 steps:
-  - name: "Search Twitter"
-    platform: twitter
+  - name: Find updates
+    platform: search
     action: search
     params:
-      query: "AI agents OR LLM tools"
-      limit: 10
-    output_var: tweets
-  
-  - name: "Post Slack Alert"
+      query: "open-source AI agents"
+      limit: 5
+    output_var: results
+
+  - name: Notify the team
     platform: slack
     action: send
     params:
-      message: "🤖 Found {tweets.count} new tweets on AI agents today."
+      message: "Found {results.count} relevant updates."
 ```
 
-Run the pipeline:
+Validate and run it:
+
 ```bash
+agentforge pipeline validate daily_digest.yaml
 agentforge pipeline run daily_digest.yaml
 ```
 
----
+More examples are available in [`examples/`](examples/).
 
-## Automated Keyword Monitoring
+## How it is organized
 
-Start background watches that trigger actions when new search results appear:
-
-```bash
-agentforge watch --platform twitter --query "AgentForge" --interval 30m --notify slack-alerts
+```text
+src/agentforge/
+├── platforms/     # Built-in platform adapters
+├── plugins/       # Third-party adapter loading
+├── cli.py         # Click command interface
+├── pipeline.py    # YAML workflow engine
+├── scheduler.py   # Repeating monitors
+├── notifier.py    # Named notification channels
+└── vault.py       # Encrypted local credentials
 ```
 
----
+The agent usage playbook lives at [`skill/SKILL.md`](skill/SKILL.md). Plugin authors can start with the [plugin guide](docs/plugins.md).
 
-## Notification Dispatcher
+## Project status and roadmap
 
-Set up and manage channels (Slack, Discord, Telegram, Email, Webhooks):
+The current focus is making the core reliable before expanding its surface area:
 
-```bash
-# Configure Slack channel
-agentforge notify setup slack-channel --type slack --url "https://hooks.slack.com/services/..."
+- [x] Unified CLI and structured output
+- [x] YAML pipelines, scheduling, notifications, and encrypted vault
+- [x] Built-in platform adapter and plugin architecture
+- [x] Multi-version continuous integration
+- [ ] More mocked integration tests and clearer platform error messages
+- [ ] Stable configuration schema and migration policy
+- [ ] Package publishing and signed releases
+- [ ] Native MCP server interface
 
-# Test notification delivery
-agentforge notify send slack-channel "Test notification from AgentForge! 🔔"
-```
+Have a use case that should influence the roadmap? Open a [feature request](https://github.com/WasiRaza895/AgentForge-/issues/new/choose).
 
----
+## Contributing
 
-## Secure Credential Vault
+Contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md), keep pull requests focused, and include tests for behavior changes. Security problems should be reported privately according to [`SECURITY.md`](SECURITY.md).
 
-All access tokens, passwords, and API keys are stored locally at `~/.agentforge/credentials.json` and encrypted at rest using AES symmetric key encryption (`cryptography.fernet`).
-
-```bash
-# Save credentials
-agentforge vault set twitter api_key "YOUR_API_KEY"
-
-# List configured keys (values masked)
-agentforge vault list
-
-# Delete credentials
-agentforge vault delete twitter api_key
-```
-
----
-
-## For AI Agents (SKILL.md)
-
-AgentForge includes an agent-native playbook (`skill/SKILL.md`) that teaches models like Claude or GPT exactly how to use this tool to interact with the web. Copy it to your agent directory:
-
-```bash
-agentforge install --skill /path/to/agent/skills/
-```
-
----
-
-## Plugin System
-
-Extend AgentForge by writing custom python platforms.
-
-### 1. Generate boilerplate template
-```bash
-agentforge plugin create custom_platform --cls CustomPlatform
-```
-
-### 2. Install plugin locally
-```bash
-agentforge plugin install ~/.agentforge/plugins/custom_platform
-```
-
----
+If AgentForge is useful to you, starring the repository and sharing a real workflow are the most helpful ways to support its early development.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+AgentForge is available under the [MIT License](LICENSE).
