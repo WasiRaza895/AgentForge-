@@ -1,0 +1,38 @@
+name: "Brand Mention Watchdog"
+description: "Watch for company name mentions across Reddit, search the web, and alert via email."
+steps:
+  - name: "Reddit Monitor"
+    platform: reddit
+    action: search
+    params:
+      query: "AgentForge"
+      limit: 3
+    output_var: reddit_hits
+
+  - name: "Google DDG Monitor"
+    platform: search
+    action: search
+    params:
+      query: "AgentForge AI"
+      limit: 3
+    output_var: ddg_hits
+
+  - name: "Email Brand Alert"
+    platform: email
+    action: send
+    params:
+      to: "pr@company.com"
+      subject: "🚨 Brand Mention Alert: AgentForge"
+      body: |
+        Hello PR Team,
+        
+        We found new mentions of AgentForge on the web:
+        
+        --- Reddit ---
+        {reddit_hits}
+        
+        --- Web Search ---
+        {ddg_hits}
+        
+        Best,
+        AgentForge Watchdog

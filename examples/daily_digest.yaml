@@ -1,0 +1,32 @@
+name: "Daily AI Research Digest"
+description: "Search Twitter and subreddits for AI Agents, summarize, and notify Slack."
+steps:
+  - name: "Search Twitter"
+    platform: twitter
+    action: search
+    params:
+      query: "AI agents OR LLM orchestration"
+      limit: 5
+    output_var: twitter_results
+    
+  - name: "Search Reddit"
+    platform: reddit
+    action: search
+    params:
+      query: "Agent framework"
+      subreddit: "MachineLearning"
+      limit: 5
+    output_var: reddit_results
+
+  - name: "Post Slack Alert"
+    platform: slack
+    action: send
+    params:
+      message: |
+        🤖 *Daily AI Research Digest* 🤖
+        
+        *Twitter Mentions:*
+        {twitter_results}
+        
+        *Reddit Highlights:*
+        {reddit_results}
