@@ -1,4 +1,4 @@
-"""Loopback browser interface for AgentForge's supported read-only tasks."""
+"""Loopback browser interface for AgentForge workflows and integration actions."""
 
 import json
 import re
@@ -8,6 +8,9 @@ from urllib.parse import urlsplit
 from xml.sax.saxutils import escape
 
 from agentforge.pipeline import Pipeline
+from agentforge.studio_connections import (
+    MissingConnection, connection_status, run_reviewed_action, save_connection,
+)
 from agentforge.utils import truncate
 
 
@@ -16,6 +19,7 @@ PAGES = {
     "/": ("index.html", "text/html; charset=utf-8"),
     "/studio.css": ("studio.css", "text/css; charset=utf-8"),
     "/studio.js": ("studio.js", "text/javascript; charset=utf-8"),
+    "/connections.js": ("connections.js", "text/javascript; charset=utf-8"),
     "/forge.js": ("forge.js", "text/javascript; charset=utf-8"),
 }
 
@@ -68,7 +72,7 @@ def run_task(request: str) -> dict:
     if search:
         name = "Web search"
         step = {"name": name, "platform": "search", "action": "search", "params": {
-            "query": search.group(1), "limit": 5, "use_exa": False,
+            "query": search.group(1), "limit": 5, "use_exa": connection_status()["exa"],
         }}
     else:
         target = re.sub(r"^(?:read|open)(?: the page at)?\s+", "", request, flags=re.IGNORECASE)
@@ -98,6 +102,10 @@ def run_task(request: str) -> dict:
 
 
 class StudioHandler(BaseHTTPRequestHandler):
+    @property
+    def _local_host(self) -> str:
+        return f"127.0.0.1:{self.server.server_port}"
+
     def _send(self, status: int, content_type: str, content: bytes) -> None:
         self.send_response(status)
         self.send_header("Content-Type", content_type)
@@ -112,21 +120,24 @@ class StudioHandler(BaseHTTPRequestHandler):
         self._send(status, "application/json", json.dumps(result).encode("utf-8"))
 
     def do_GET(self) -> None:
-        if self.path in PAGES:
+        if self.headers.get("Host") != self._local_host:
+            self._send_json(403, {"error": "Open Studio at its local URL."})
+        elif self.path in PAGES:
             name, content_type = PAGES[self.path]
             self._send(200, content_type, (ASSETS / name).read_bytes())
         elif self.path in {"/api/demo/briefing", "/api/demo/scan"}:
             self._send_json(200, run_demo(self.path.rsplit("/", 1)[1]))
+        elif self.path == "/api/connections":
+            self._send_json(200, {"connections": connection_status()})
         else:
             self.send_error(404)
 
     def do_POST(self) -> None:
-        if self.path != "/api/task":
+        if self.path not in {"/api/task", "/api/connections", "/api/actions"}:
             self.send_error(404)
             return
-        host = f"127.0.0.1:{self.server.server_port}"
-        if self.headers.get("Host") != host or self.headers.get("Origin") != f"http://{host}":
-            self._send_json(403, {"error": "Open Studio at its local URL to run a task."})
+        if self.headers.get("Host") != self._local_host or self.headers.get("Origin") != f"http://{self._local_host}":
+            self._send_json(403, {"error": "Open Studio at its local URL to continue."})
             return
         if self.headers.get_content_type() != "application/json":
             self._send_json(415, {"error": "Send the task as JSON."})
@@ -134,21 +145,41 @@ class StudioHandler(BaseHTTPRequestHandler):
 
         try:
             length = int(self.headers.get("Content-Length", "0"))
-            if not 0 < length <= 4096:
+            if not 0 < length <= 24_576:
                 raise ValueError
             payload = json.loads(self.rfile.read(length))
+            if not isinstance(payload, dict):
+                raise ValueError
         except ValueError:
-            self._send_json(400, {"error": "Enter a short request to run a task."})
-            return
-        request = payload.get("request") if isinstance(payload, dict) else None
-        if not isinstance(request, str) or not request.strip():
-            self._send_json(400, {"error": "Enter a request to run a task."})
+            self._send_json(400, {"error": "Enter a valid request to continue."})
             return
 
         try:
-            result = run_task(request)
+            if self.path == "/api/task":
+                request = payload.get("request")
+                if not isinstance(request, str) or not request.strip() or len(request) > 500:
+                    raise ValueError("Enter a request of up to 500 characters.")
+                result = run_task(request)
+            elif self.path == "/api/connections":
+                provider, credential = payload.get("provider"), payload.get("credential")
+                if not isinstance(provider, str) or not isinstance(credential, str):
+                    raise ValueError("Choose a service and enter its credential.")
+                save_connection(provider, credential)
+                result = {"success": True, "connections": connection_status()}
+            else:
+                fields = [payload.get(key, "") for key in ("provider", "repo", "title", "content")]
+                if not all(isinstance(value, str) for value in fields):
+                    raise ValueError("Enter values for the action's fields.")
+                provider, repo, title, content = fields
+                result = run_reviewed_action(provider, payload.get("confirmed"), repo, title, content)
+        except MissingConnection as exc:
+            self._send_json(409, {"error": str(exc), "connection": exc.provider})
+            return
         except ValueError as exc:
             self._send_json(400, {"error": str(exc)})
+            return
+        except OSError:
+            self._send_json(500, {"error": "Studio could not access the local credential vault."})
             return
         self._send_json(200, result)
 

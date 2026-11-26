@@ -20,6 +20,8 @@ agentforge studio --open
 
 In Studio, type `Read https://example.com` or `Search for Python tools`, then select **Run task**. These requests use the internet and require no API key. Type `Run the release briefing` to try the offline demo.
 
+Use **API & Connections** to add a GitHub access token or Slack incoming webhook URL, then choose the matching write action under **What should AgentForge do?**. Review the destination and content before confirming. Studio uses the same local vault as the CLI.
+
 ---
 
 ## Step 2: Read URL or Search the Web

@@ -4,11 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <meta name="description" content="AgentForge Studio runs local, credential-free workflow demos in your browser.">
+  <meta name="description" content="Search, read, take approved actions, and run AgentForge workflows in a local browser workspace.">
   <title>AgentForge Studio</title>
   <link rel="stylesheet" href="studio.css">
   <script src="forge.js" defer></script>
   <script src="studio.js" defer></script>
+  <script src="connections.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -20,6 +21,7 @@
     <nav class="rail-nav" aria-label="Workspace">
       <div class="rail-label">Workspace</div>
       <a href="#overview" class="nav-link active" aria-current="location"><span class="icon icon-grid" aria-hidden="true"></span>Overview</a>
+      <a href="#connections" class="nav-link"><span class="icon icon-lock" aria-hidden="true"></span>API &amp; Connections</a>
       <a href="#tasks" class="nav-link"><span class="icon icon-code" aria-hidden="true"></span>Tasks</a>
       <a href="#workflows" class="nav-link"><span class="icon icon-flow" aria-hidden="true"></span>Workflows</a>
       <a href="#history" class="nav-link"><span class="icon icon-clock" aria-hidden="true"></span>Run history</a>
@@ -37,7 +39,7 @@
       <div class="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span><strong id="location-label">Overview</strong></div>
       <div class="top-actions">
         <span class="engine-status"><span class="status-dot" aria-hidden="true"></span>Local engine</span>
-        <button type="button" class="button button-small" data-open="setup"><span class="icon icon-code" aria-hidden="true"></span>CLI setup</button>
+        <a href="#connections" class="button button-small button-primary"><span class="icon icon-lock" aria-hidden="true"></span>API &amp; Connections</a>
       </div>
     </header>
 
@@ -49,18 +51,45 @@
         </div>
         <div class="hero-copy">
           <p class="eyebrow"><span aria-hidden="true"></span> AgentForge Studio</p>
-          <h1 id="hero-title">From signal<br>to <em>action.</em></h1>
-          <p class="hero-description">Search the web, read a page, or run a workflow from your browser.</p>
+          <h1 id="hero-title">From research<br>to <em>action.</em></h1>
+          <p class="hero-description">Give your AI agent hands to act across the web, GitHub, Slack, and the services you use.</p>
           <div class="hero-actions">
-            <a href="#tasks" class="button button-copper">Enter a task</a>
+            <a href="#tasks" class="button button-copper">Try an action</a>
             <button type="button" class="button button-dark" id="hero-run"><span class="play" aria-hidden="true"></span>Run sample workflow</button>
           </div>
         </div>
       </section>
 
+      <section class="connection-section" id="connections" aria-labelledby="connection-title">
+        <div class="section-head">
+          <div><h2 id="connection-title">API &amp; Connections</h2><p>Add a credential for the service you want AgentForge to use.</p></div>
+        </div>
+        <div class="panel connection-panel">
+          <form id="connection-form">
+            <label class="form-field" for="connection-provider">Service
+              <select id="connection-provider" name="provider">
+                <option value="github">GitHub</option>
+                <option value="slack">Slack</option>
+                <option value="exa">Exa search</option>
+              </select>
+            </label>
+            <label class="form-field" for="connection-secret"><span id="credential-label">GitHub access token</span>
+              <input id="connection-secret" name="credential" type="password" required maxlength="1000" autocomplete="new-password" spellcheck="false" aria-describedby="credential-help">
+            </label>
+            <button type="submit" class="button button-primary" id="connection-save">Save locally</button>
+          </form>
+          <div class="connection-meta">
+            <p><span id="credential-help">Use a token with Issues write permission for the repository.</span> <a id="credential-guide" href="https://docs.github.com/en/rest/issues/issues#create-an-issue" target="_blank" rel="noreferrer">Setup guide</a></p>
+            <span class="badge badge-neutral" id="connection-indicator">Checking vault</span>
+          </div>
+          <p class="task-status" id="connection-status" role="status"></p>
+          <div class="connection-footer"><p class="storage-note">Credentials stay in the encrypted vault on this computer. Search, webpage reads, and sample workflows work without a key.</p><button type="button" class="button button-small" data-open="setup">CLI setup</button></div>
+        </div>
+      </section>
+
       <section class="task-section" id="tasks" aria-labelledby="task-title">
         <div class="section-head">
-          <div><h2 id="task-title">What should AgentForge do?</h2><p id="task-help">Type a web search, a webpage URL, or a request to run a sample. No API key required.</p></div>
+          <div><h2 id="task-title">What should AgentForge do?</h2><p id="task-help">Type a search or URL, or choose an action that writes to a connected service.</p></div>
         </div>
         <div class="panel task-panel">
           <form id="task-form">
@@ -75,6 +104,10 @@
           </div>
           <p id="task-status" class="task-status" role="status"></p>
           <div id="task-output" class="task-output" hidden></div>
+          <div class="write-actions">
+            <button type="button" class="button button-small" data-action-provider="github"><span class="icon icon-repo" aria-hidden="true"></span>Create a GitHub issue</button>
+            <button type="button" class="button button-small" data-action-provider="slack"><span class="icon icon-flow" aria-hidden="true"></span>Send a Slack message</button>
+          </div>
         </div>
       </section>
 
@@ -132,6 +165,23 @@
       </section>
     </main>
   </div>
+
+  <dialog id="action-dialog" aria-labelledby="action-title">
+    <div class="dialog-head"><h2 id="action-title">Review action</h2><form method="dialog"><button type="submit" class="button button-small" id="close-action">Close</button></form></div>
+    <div id="action-setup" hidden>
+      <p id="action-setup-message"></p>
+      <button type="button" class="button button-primary" id="configure-action">Add credential</button>
+    </div>
+    <form id="action-form">
+      <p id="action-destination"></p>
+      <label class="form-field" id="repo-field" for="action-repo">Repository <input id="action-repo" name="repo" type="text" placeholder="owner/repo" maxlength="160"></label>
+      <label class="form-field" id="title-field" for="action-issue-title">Issue title <input id="action-issue-title" name="title" type="text" maxlength="256"></label>
+      <label class="form-field" for="action-content"><span id="action-content-label">Message</span><textarea id="action-content" name="content" rows="5" maxlength="4000"></textarea></label>
+      <label class="confirm-action"><input id="action-confirm" name="confirmed" type="checkbox" required> I’ve reviewed the destination and content.</label>
+      <button type="submit" class="button button-primary" id="action-submit">Run action</button>
+    </form>
+    <div id="action-status" class="task-status" role="status"></div>
+  </dialog>
 
   <dialog id="setup" aria-labelledby="setup-title">
     <div class="dialog-head"><div><p class="panel-label">Local workspace</p><h2 id="setup-title">CLI setup</h2></div><form method="dialog"><button type="submit" class="button button-small">Close</button></form></div>

@@ -330,7 +330,7 @@ def doctor():
 @click.option('--port', default=8765, type=click.IntRange(0, 65535), show_default=True)
 @click.option('--open', 'open_browser', is_flag=True, help='Open Studio in your default browser.')
 def studio(port, open_browser):
-    """Start a local browser workspace for read-only tasks and demos."""
+    """Start a local browser workspace for tasks, actions, and demos."""
     import webbrowser
 
     from agentforge.studio import create_server

@@ -1,6 +1,8 @@
 # 🔨 AgentForge
 
-A local-first Python toolkit for connecting web reads, searches, and notifications in YAML workflows. Run workflows from the CLI or type a supported request in AgentForge Studio, a browser interface powered by the same Python pipeline engine.
+**Give your AI agent hands to act on the internet—not just eyes to read it.**
+
+AgentForge is a local-first Python CLI for reading, writing, searching, notifying, and running workflows across platforms from one interface. An AI assistant can call the CLI to act on results, such as searching for updates and posting a digest to Slack or opening a GitHub issue. AgentForge Studio lets you try some of the same actions in a browser and review what will reach the connected service.
 
 <p align="center">
   <a href="https://github.com/WasiRaza895/AgentForge-/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/WasiRaza895/AgentForge-/ci.yml?branch=main&style=flat-square&label=tests"></a>
@@ -21,6 +23,18 @@ Agent tools often stop at research. AgentForge adds a shared command surface for
 - **Local credentials** stored in an encrypted vault with a key on the same machine.
 - **Scriptable output** in text, JSON, CSV, or Markdown.
 - **Local plugins** that can add trusted Python adapters to workflows.
+
+## API & Connections
+
+In Studio, open **API & Connections** and choose a service. Paste its credential and select **Save locally**. Studio stores it in the same encrypted vault as the CLI and asks you to add it when a write action needs it.
+
+| Service | What to add in Studio | What it enables |
+|---|---|---|
+| GitHub | A fine-grained access token with **Issues: write** on the target repository | Create an issue after you review the repository, title, and description. [GitHub setup](https://docs.github.com/en/rest/issues/issues#create-an-issue) |
+| Slack | An incoming webhook URL for the destination channel | Send a message after you review the content and destination. [Slack setup](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/) |
+| Exa | An Exa API key | Use Exa for web searches. AgentForge can also search via DuckDuckGo without a key. [Exa API](https://docs.exa.ai/reference/search) |
+
+An AI assistant uses its own model connection. AgentForge uses service credentials to carry out actions on those services. The bundled workflow, basic webpage reads, and basic web search work without installing an AI model or adding a key. Use `agentforge doctor` and `agentforge vault` to configure other adapters from the CLI.
 
 ## Quick start
 
@@ -60,11 +74,11 @@ Start Studio and keep the terminal running while you use it.
 agentforge studio --open
 ```
 
-Under **What should AgentForge do?**, try `Search for Python tools`, `Read https://example.com`, or `Run the release briefing`. These requests need no API key. The live web tasks need internet access. The bundled briefing runs offline. You can also select a demo in **Workflows** to inspect its YAML and copy the JSON result.
+Under **What should AgentForge do?**, try `Search for Python tools`, `Read https://example.com`, or `Run the release briefing`. Live web tasks need internet access. The bundled briefing runs offline. To take an action, choose **Create a GitHub issue** or **Send a Slack message**, check the details, and confirm. Use **Workflows** to inspect the bundled YAML and copy its JSON output.
 
 ### Using AgentForge with an AI assistant
 
-Studio recognizes a small set of read-only requests. For an open-ended request, an AI assistant can choose AgentForge commands or put them together into a YAML workflow. The assistant handles the planning and AgentForge performs the steps. Platform actions such as posting to Slack still require that platform's credentials.
+An AI assistant can use AgentForge commands to read sources, search, and perform actions on connected services, or put those commands together in YAML. The assistant handles the planning and AgentForge performs the steps. Review an assistant's proposed writes before it runs them.
 
 Try a live read or check which integrations are available locally.
 
@@ -84,7 +98,7 @@ See the [installation guide](docs/install.md) and [quick-start guide](docs/quick
 | Search | — | ✅ | — | DuckDuckGo / optional Exa |
 | YouTube | ✅ | ✅ | — | `yt-dlp` |
 | RSS / Atom | ✅ | — | — | `feedparser` |
-| GitHub | ✅ | ✅ | ✅ | GitHub CLI |
+| GitHub | ✅ | ✅ | ✅ | GitHub CLI, with direct API issue creation in Studio |
 | Twitter / X | ✅ | ✅ | ✅ | Nitter / `xreach` / API |
 | Reddit | ✅ | ✅ | ✅ | JSON API / PRAW |
 | LinkedIn | ✅ | — | ✅ | Jina Reader / REST API |
