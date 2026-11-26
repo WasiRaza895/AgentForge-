@@ -15,8 +15,10 @@ From the repository root, try the release briefing with bundled data or open Stu
 
 ```bash
 agentforge --output json pipeline run examples/rss_briefing.yaml
-agentforge studio
+agentforge studio --open
 ```
+
+In Studio, type `Read https://example.com` or `Search for Python tools`, then select **Run task**. These requests use the internet and require no API key. Type `Run the release briefing` to try the offline demo.
 
 ---
 

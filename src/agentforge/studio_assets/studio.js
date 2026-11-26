@@ -57,6 +57,27 @@ function setStatus(text, state = "") {
   status.className = `inspector-status ${state}`.trim();
 }
 
+function reportError(report) {
+  const failedStep = report.log?.find((step) => !step.success);
+  return report.error || failedStep?.error || failedStep?.result?.error || "A workflow step failed.";
+}
+
+function showFeedResults(report, output) {
+  let total = 0;
+  const list = make("ul", "result-list");
+  for (const step of report.log) {
+    const entries = step.result.entries;
+    for (const entry of entries) {
+      const item = make("li");
+      item.append(make("strong", "", entry.title), make("small", "", step.result.metadata.title));
+      list.append(item);
+    }
+    total += entries.length;
+  }
+  output.append(list);
+  return `${total} feed ${total === 1 ? "entry" : "entries"}`;
+}
+
 function showRun(run) {
   shownRun = run;
   const output = byId("run-results");
@@ -68,25 +89,11 @@ function showRun(run) {
     return;
   }
   if (!run.result.success) {
-    const failedStep = run.result.log?.find((step) => !step.success);
-    output.append(make("p", "", run.result.error || failedStep?.error || failedStep?.result?.error || "A workflow step failed."));
+    output.append(make("p", "", reportError(run.result)));
     setStatus("Workflow failed", "error");
     return;
   }
-
-  let total = 0;
-  const list = make("ul", "result-list");
-  for (const step of run.result.log) {
-    const entries = step.result.entries;
-    for (const entry of entries) {
-      const item = make("li");
-      item.append(make("strong", "", entry.title), make("small", "", step.result.metadata.title));
-      list.append(item);
-    }
-    total += entries.length;
-  }
-  output.append(list);
-  setStatus(`Completed · ${total} feed ${total === 1 ? "entry" : "entries"}`, "success");
+  setStatus(`Completed · ${showFeedResults(run.result, output)}`, "success");
 }
 
 function selectWorkflow(id, tab = "steps", run = latestRuns.get(id)) {
@@ -171,6 +178,89 @@ async function copy(text, button) {
   }
   setTimeout(() => { button.textContent = label; }, 1600);
 }
+
+function resultLink(url, title) {
+  try {
+    const link = new URL(url);
+    if (["http:", "https:"].includes(link.protocol)) {
+      const anchor = make("a", "", title);
+      anchor.href = link.href;
+      anchor.target = "_blank";
+      anchor.rel = "noreferrer";
+      return anchor;
+    }
+  } catch {
+    // The adapter can return a result without a usable link.
+  }
+  return make("strong", "", title);
+}
+
+function showTaskResults(report, output) {
+  const step = report.log[0];
+  if (step.platform === "rss") return showFeedResults(report, output);
+  if (step.platform === "web") {
+    const source = resultLink(step.result.url, step.result.url);
+    source.className = "page-source";
+    output.append(source, make("pre", "page-content", step.result.content || "No page text found."));
+    return "Page text ready";
+  }
+
+  const list = make("ul", "result-list");
+  for (const entry of step.result) {
+    const item = make("li");
+    item.append(resultLink(entry.url, entry.title), make("small", "", entry.snippet));
+    list.append(item);
+  }
+  output.append(list);
+  const count = step.result.length;
+  return `${count} search ${count === 1 ? "result" : "results"}`;
+}
+
+const taskInput = byId("task-input");
+const taskSubmit = byId("task-submit");
+const taskStatus = byId("task-status");
+const taskOutput = byId("task-output");
+const taskExamples = document.querySelectorAll("[data-request]");
+
+for (const button of taskExamples) {
+  button.addEventListener("click", () => {
+    taskInput.value = button.dataset.request;
+    taskInput.focus();
+  });
+}
+
+byId("task-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (taskSubmit.disabled) return;
+  const request = taskInput.value.trim();
+  taskInput.readOnly = true;
+  taskSubmit.disabled = true;
+  for (const button of taskExamples) button.disabled = true;
+  taskStatus.className = "task-status";
+  taskStatus.textContent = "Running task…";
+  taskOutput.replaceChildren();
+  taskOutput.hidden = true;
+  try {
+    const response = await fetch("/api/task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ request }),
+    });
+    const report = await response.json();
+    if (!response.ok || !report.success) throw new Error(reportError(report));
+    const summary = showTaskResults(report, taskOutput);
+    taskOutput.hidden = false;
+    taskStatus.classList.add("success");
+    taskStatus.textContent = `${report.name} · ${summary}`;
+  } catch (error) {
+    taskStatus.classList.add("error");
+    taskStatus.textContent = error instanceof SyntaxError ? "Could not reach the local Studio app." : error.message;
+  } finally {
+    taskInput.readOnly = false;
+    taskSubmit.disabled = false;
+    for (const button of taskExamples) button.disabled = false;
+  }
+});
 
 for (const button of choiceButtons) button.addEventListener("click", () => selectWorkflow(button.dataset.workflow));
 for (const tab of tabs) {

@@ -19,9 +19,10 @@ class SearchPlatform(BasePlatform):
         """Searches the web using Exa API or falls back to DuckDuckGo HTML parsing."""
         limit = kwargs.get("limit", 5)
         
-        # Check if Exa API token exists in Vault
-        vault = CredentialVault()
-        exa_key = vault.get("search", "exa_key") or vault.get("exa", "api_key")
+        exa_key = None
+        if kwargs.get("use_exa", True):
+            vault = CredentialVault()
+            exa_key = vault.get("search", "exa_key") or vault.get("exa", "api_key")
         
         if exa_key:
             try:

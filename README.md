@@ -1,6 +1,6 @@
 # 🔨 AgentForge
 
-A local-first Python toolkit for connecting web reads, searches, and notifications in YAML workflows. Run workflows from the CLI or explore bundled demos in AgentForge Studio, a browser interface powered by the same Python pipeline engine.
+A local-first Python toolkit for connecting web reads, searches, and notifications in YAML workflows. Run workflows from the CLI or type a supported request in AgentForge Studio, a browser interface powered by the same Python pipeline engine.
 
 <p align="center">
   <a href="https://github.com/WasiRaza895/AgentForge-/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/WasiRaza895/AgentForge-/ci.yml?branch=main&style=flat-square&label=tests"></a>
@@ -54,11 +54,17 @@ agentforge --output json pipeline run examples/rss_briefing.yaml
 
 The first step reads three release notes. The second uses the first step's `{feed.metadata.link}` to read two implementation notes. The JSON result includes a log for both steps.
 
-For the browser demo, start Studio and open the URL it prints (by default `http://127.0.0.1:8765`). Select a workflow, inspect its YAML, run it, and review the results or copy the JSON. Studio runs the bundled, read-only demos on your machine.
+Start Studio and keep the terminal running while you use it.
 
 ```bash
-agentforge studio
+agentforge studio --open
 ```
+
+Under **What should AgentForge do?**, try `Search for Python tools`, `Read https://example.com`, or `Run the release briefing`. These requests need no API key. The live web tasks need internet access. The bundled briefing runs offline. You can also select a demo in **Workflows** to inspect its YAML and copy the JSON result.
+
+### Using AgentForge with an AI assistant
+
+Studio recognizes a small set of read-only requests. For an open-ended request, an AI assistant can choose AgentForge commands or put them together into a YAML workflow. The assistant handles the planning and AgentForge performs the steps. Platform actions such as posting to Slack still require that platform's credentials.
 
 Try a live read or check which integrations are available locally.
 

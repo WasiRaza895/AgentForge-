@@ -20,6 +20,7 @@
     <nav class="rail-nav" aria-label="Workspace">
       <div class="rail-label">Workspace</div>
       <a href="#overview" class="nav-link active" aria-current="location"><span class="icon icon-grid" aria-hidden="true"></span>Overview</a>
+      <a href="#tasks" class="nav-link"><span class="icon icon-code" aria-hidden="true"></span>Tasks</a>
       <a href="#workflows" class="nav-link"><span class="icon icon-flow" aria-hidden="true"></span>Workflows</a>
       <a href="#history" class="nav-link"><span class="icon icon-clock" aria-hidden="true"></span>Run history</a>
     </nav>
@@ -49,11 +50,31 @@
         <div class="hero-copy">
           <p class="eyebrow"><span aria-hidden="true"></span> AgentForge Studio</p>
           <h1 id="hero-title">From signal<br>to <em>action.</em></h1>
-          <p class="hero-description">Run a workflow, follow the data between steps, and inspect the output from AgentForge’s Python engine.</p>
+          <p class="hero-description">Search the web, read a page, or run a workflow from your browser.</p>
           <div class="hero-actions">
-            <button type="button" class="button button-copper" id="hero-run"><span class="play" aria-hidden="true"></span>Run sample workflow</button>
-            <a href="#workflows" class="button button-dark">Explore workflows</a>
+            <a href="#tasks" class="button button-copper">Enter a task</a>
+            <button type="button" class="button button-dark" id="hero-run"><span class="play" aria-hidden="true"></span>Run sample workflow</button>
           </div>
+        </div>
+      </section>
+
+      <section class="task-section" id="tasks" aria-labelledby="task-title">
+        <div class="section-head">
+          <div><h2 id="task-title">What should AgentForge do?</h2><p id="task-help">Type a web search, a webpage URL, or a request to run a sample. No API key required.</p></div>
+        </div>
+        <div class="panel task-panel">
+          <form id="task-form">
+            <label for="task-input" class="screen-reader">Your request</label>
+            <input id="task-input" name="request" type="text" aria-describedby="task-help" placeholder="Search the web for Python agent tools" required maxlength="500" autocomplete="off">
+            <button type="submit" class="button button-primary" id="task-submit"><span class="play" aria-hidden="true"></span>Run task</button>
+          </form>
+          <div class="task-examples" role="group" aria-label="Example requests">
+            <button type="button" class="task-example" data-request="Search the web for Python agent tools">Search the web</button>
+            <button type="button" class="task-example" data-request="Read https://example.com">Read a webpage</button>
+            <button type="button" class="task-example" data-request="Run the release briefing">Try the offline demo</button>
+          </div>
+          <p id="task-status" class="task-status" role="status"></p>
+          <div id="task-output" class="task-output" hidden></div>
         </div>
       </section>
 
@@ -114,9 +135,9 @@
 
   <dialog id="setup" aria-labelledby="setup-title">
     <div class="dialog-head"><div><p class="panel-label">Local workspace</p><h2 id="setup-title">CLI setup</h2></div><form method="dialog"><button type="submit" class="button button-small">Close</button></form></div>
-    <p>Install AgentForge from the repository, then start Studio in your browser.</p>
+    <p>Install AgentForge from the repository once, then launch Studio. Keep the terminal running while you use it.</p>
     <pre><code>python -m pip install .
-agentforge studio</code></pre>
+agentforge studio --open</code></pre>
     <p>Run the same release briefing from the root of the checkout.</p>
     <pre><code>agentforge --output json pipeline run examples/rss_briefing.yaml</code></pre>
   </dialog>

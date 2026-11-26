@@ -328,8 +328,11 @@ def doctor():
 # Install
 @cli.command()
 @click.option('--port', default=8765, type=click.IntRange(0, 65535), show_default=True)
-def studio(port):
-    """Open a local browser workspace for the bundled demo workflows."""
+@click.option('--open', 'open_browser', is_flag=True, help='Open Studio in your default browser.')
+def studio(port, open_browser):
+    """Start a local browser workspace for read-only tasks and demos."""
+    import webbrowser
+
     from agentforge.studio import create_server
 
     try:
@@ -337,7 +340,10 @@ def studio(port):
     except OSError as exc:
         raise click.ClickException(f"Could not start Studio on port {port}: {exc}") from exc
     with server:
-        click.echo(f"AgentForge Studio: http://127.0.0.1:{server.server_port}")
+        url = f"http://127.0.0.1:{server.server_port}"
+        click.echo(f"AgentForge Studio: {url}")
+        if open_browser:
+            webbrowser.open(url)
         try:
             server.serve_forever()
         except KeyboardInterrupt:
