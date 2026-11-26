@@ -30,7 +30,8 @@
   const actionClose = byId("close-action");
   let connections = null;
   let actionProvider = "";
-  let waitingAction = "";
+  let actionDraft = null;
+  let waitingAction = null;
 
   function notice(element, text, state = "") {
     element.textContent = text;
@@ -92,9 +93,10 @@
       connections = result.connections;
       renderConnection();
       notice(connectionMessage, `${providers[id].name} credential saved locally.`, "success");
-      if (waitingAction === id) {
-        waitingAction = "";
-        showAction(id);
+      if (waitingAction?.id === id) {
+        const { draft } = waitingAction;
+        waitingAction = null;
+        showAction(id, draft);
       }
     } catch (error) {
       notice(connectionMessage, error.message, "error");
@@ -106,15 +108,21 @@
   });
 
   function showMissingConnection(id) {
-    byId("action-setup-message").textContent = `Add a ${providers[id].credential} in API & Connections to continue.`;
+    byId("action-setup-message").textContent = `Add a ${providers[id].credential} in Service Connections to continue.`;
     byId("action-setup").hidden = false;
     actionForm.hidden = true;
   }
 
-  function showAction(id) {
+  function showAction(id, draft = null) {
     const github = id === "github";
     actionProvider = id;
+    actionDraft = draft;
     actionForm.reset();
+    if (draft) {
+      byId("action-repo").value = draft.repo;
+      byId("action-issue-title").value = draft.title;
+      byId("action-content").value = draft.content;
+    }
     byId("action-title").textContent = providers[id].action;
     byId("repo-field").hidden = !github;
     byId("title-field").hidden = !github;
@@ -133,6 +141,12 @@
     if (!actionDialog.open) actionDialog.showModal();
   }
 
+  document.addEventListener("agentforge:review-draft", async (event) => {
+    await refreshConnections();
+    const draft = event.detail;
+    showAction(draft.provider, draft);
+  });
+
   for (const button of document.querySelectorAll("[data-action-provider]")) {
     button.addEventListener("click", async () => {
       await refreshConnections();
@@ -141,7 +155,7 @@
   }
 
   byId("configure-action").addEventListener("click", () => {
-    waitingAction = actionProvider;
+    waitingAction = { id: actionProvider, draft: actionDraft };
     actionDialog.close();
     switchProvider(actionProvider);
     location.hash = "connections";
@@ -164,6 +178,7 @@
     try {
       const result = await post("/api/actions", payload);
       if (result.connection) {
+        actionDraft = payload;
         showMissingConnection(result.connection);
         notice(actionStatus, "");
         return;

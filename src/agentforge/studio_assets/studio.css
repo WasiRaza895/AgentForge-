@@ -104,6 +104,8 @@ main { max-width: 1540px; margin-inline: auto; padding: 30px 34px 46px; }
 .panel { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 13px; box-shadow: 0 2px 4px #22302505; }
 .connection-panel { padding: 16px; }
 #connection-form { display: grid; grid-template-columns: minmax(135px, .45fr) minmax(130px, 1fr) auto; align-items: end; gap: 10px; }
+#model-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; }
+.connection-section #model-indicator, .task-section #task-mode { display: inline-flex; }
 .form-field { min-width: 0; display: grid; gap: 6px; color: var(--ink); font-size: .9rem; font-weight: 650; }
 .form-field :is(input, select, textarea) { min-width: 0; width: 100%; min-height: 42px; border: 1px solid #c5d0c3; border-radius: 8px; background: #fafcf9; color: var(--ink); padding: 8px 10px; font: inherit; font-weight: 450; }
 .form-field select { appearance: none; padding-right: 28px; background-image: linear-gradient(45deg, transparent 50%, #426049 50%), linear-gradient(135deg, #426049 50%, transparent 50%); background-position: right 15px center, right 10px center; background-size: 5px 5px; background-repeat: no-repeat; }
@@ -126,6 +128,9 @@ main { max-width: 1540px; margin-inline: auto; padding: 30px 34px 46px; }
 .task-status.error { color: #983a2b; }
 .task-output { margin-top: 9px; border-top: 1px solid #edf0ea; padding-top: 7px; }
 .task-output a { color: #3d6549; text-decoration: underline; overflow-wrap: anywhere; }
+.task-output h3 { margin: 10px 0 6px; font-size: .95rem; }
+.task-output .draft-button { margin-top: 12px; }
+.task-status a { margin-left: 6px; color: inherit; text-decoration: underline; }
 .page-source { display: inline-block; margin-bottom: 8px; font-size: .88rem; }
 .page-content { max-height: 300px; white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: .93rem; }
 .write-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; border-top: 1px solid #edf0ea; padding-top: 10px; margin-top: 12px; }
@@ -227,8 +232,8 @@ dialog p:not(.panel-label) { margin: 16px 0 8px; color: var(--muted); line-heigh
   .hero { display: flex; flex-direction: column-reverse; align-items: stretch; }
   .motion-button { bottom: 9px; right: 9px; }
   .button { padding-inline: 10px; font-size: .81rem; }
-  #connection-form { grid-template-columns: minmax(0, 1fr); }
-  #connection-save { justify-self: start; }
+  #connection-form, #model-form { grid-template-columns: minmax(0, 1fr); }
+  #connection-save, #model-save { justify-self: start; }
   .connection-footer { align-items: flex-start; }
   .section-head h2 { font-size: 1.49rem; }
   .workflow-choice { gap: 8px; }

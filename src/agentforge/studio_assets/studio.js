@@ -195,9 +195,7 @@ function resultLink(url, title) {
   return make("strong", "", title);
 }
 
-function showTaskResults(report, output) {
-  const step = report.log[0];
-  if (step.platform === "rss") return showFeedResults(report, output);
+function showReadStep(step, output) {
   if (step.platform === "web") {
     const source = resultLink(step.result.url, step.result.url);
     source.className = "page-source";
@@ -214,6 +212,31 @@ function showTaskResults(report, output) {
   output.append(list);
   const count = step.result.length;
   return `${count} search ${count === 1 ? "result" : "results"}`;
+}
+
+function showTaskResults(report, output) {
+  if (!report.model) {
+    if (report.log[0].platform === "rss") return showFeedResults(report, output);
+    return showReadStep(report.log[0], output);
+  }
+  if (report.summary) {
+    output.append(make("h3", "", "Gemini summary"), make("pre", "page-content", report.summary));
+  }
+  const results = report.log.map((step) => {
+    if (report.log.length > 1 || report.summary) output.append(make("h3", "", step.step));
+    return showReadStep(step, output);
+  });
+  if (report.draft) {
+    const label = report.draft.provider === "github" ? "Review GitHub issue" : "Review Slack message";
+    const review = make("button", "button button-primary draft-button", label);
+    review.type = "button";
+    review.addEventListener("click", () => {
+      document.dispatchEvent(new CustomEvent("agentforge:review-draft", { detail: report.draft }));
+    });
+    output.append(review);
+    return "Action drafted for your review";
+  }
+  return report.summary ? "Summary ready" : results.join(" · ");
 }
 
 const taskInput = byId("task-input");
@@ -240,6 +263,7 @@ byId("task-form").addEventListener("submit", async (event) => {
   taskStatus.textContent = "Running task…";
   taskOutput.replaceChildren();
   taskOutput.hidden = true;
+  let modelHelp = false;
   try {
     const response = await fetch("/api/task", {
       method: "POST",
@@ -247,14 +271,20 @@ byId("task-form").addEventListener("submit", async (event) => {
       body: JSON.stringify({ request }),
     });
     const report = await response.json();
+    modelHelp = report.needs_model || report.model_error;
     if (!response.ok || !report.success) throw new Error(reportError(report));
     const summary = showTaskResults(report, taskOutput);
     taskOutput.hidden = false;
     taskStatus.classList.add("success");
-    taskStatus.textContent = `${report.name} · ${summary}`;
+    taskStatus.textContent = `${report.model || report.name} · ${summary}`;
   } catch (error) {
     taskStatus.classList.add("error");
     taskStatus.textContent = error instanceof SyntaxError ? "Could not reach the local Studio app." : error.message;
+    if (modelHelp) {
+      const link = make("a", "", "Open AI Model settings");
+      link.href = "#ai-model";
+      taskStatus.append(link);
+    }
   } finally {
     taskInput.readOnly = false;
     taskSubmit.disabled = false;

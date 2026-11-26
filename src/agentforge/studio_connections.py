@@ -18,7 +18,7 @@ VAULT_LOCK = Lock()
 
 class MissingConnection(ValueError):
     def __init__(self, provider: str):
-        super().__init__("Add the service credential in API & Connections to continue.")
+        super().__init__("Add the service credential in Service Connections to continue.")
         self.provider = provider
 
 
@@ -39,7 +39,8 @@ def _configured(vault: CredentialVault, name: str) -> bool:
     if name == "slack":
         return bool(credential and _is_slack_webhook(credential))
     if name == "exa":
-        return bool(credential or vault.get("exa", "api_key"))
+        key = credential or vault.get("exa", "api_key")
+        return bool(key and not key.startswith("AIza"))
     return bool(credential)
 
 
@@ -59,6 +60,8 @@ def save_connection(provider: str, credential: str) -> None:
         raise ValueError("Enter a credential without spaces or line breaks.")
     if provider == "slack" and not _is_slack_webhook(credential):
         raise ValueError("Paste an HTTPS Slack incoming webhook URL with a /services/ path.")
+    if provider == "exa" and credential.startswith("AIza"):
+        raise ValueError("Paste Google Gemini keys into the AI Model section above.")
 
     with VAULT_LOCK:
         CredentialVault().set(*CONNECTIONS[provider], credential)

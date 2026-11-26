@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="studio.css">
   <script src="forge.js" defer></script>
   <script src="studio.js" defer></script>
+  <script src="model.js" defer></script>
   <script src="connections.js" defer></script>
 </head>
 <body>
@@ -21,7 +22,8 @@
     <nav class="rail-nav" aria-label="Workspace">
       <div class="rail-label">Workspace</div>
       <a href="#overview" class="nav-link active" aria-current="location"><span class="icon icon-grid" aria-hidden="true"></span>Overview</a>
-      <a href="#connections" class="nav-link"><span class="icon icon-lock" aria-hidden="true"></span>API &amp; Connections</a>
+      <a href="#ai-model" class="nav-link"><span class="icon icon-code" aria-hidden="true"></span>AI Model</a>
+      <a href="#connections" class="nav-link"><span class="icon icon-lock" aria-hidden="true"></span>Service Connections</a>
       <a href="#tasks" class="nav-link"><span class="icon icon-code" aria-hidden="true"></span>Tasks</a>
       <a href="#workflows" class="nav-link"><span class="icon icon-flow" aria-hidden="true"></span>Workflows</a>
       <a href="#history" class="nav-link"><span class="icon icon-clock" aria-hidden="true"></span>Run history</a>
@@ -39,7 +41,7 @@
       <div class="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span><strong id="location-label">Overview</strong></div>
       <div class="top-actions">
         <span class="engine-status"><span class="status-dot" aria-hidden="true"></span>Local engine</span>
-        <a href="#connections" class="button button-small button-primary"><span class="icon icon-lock" aria-hidden="true"></span>API &amp; Connections</a>
+        <a href="#ai-model" class="button button-small button-primary"><span class="icon icon-code" aria-hidden="true"></span>AI Model</a>
       </div>
     </header>
 
@@ -52,7 +54,7 @@
         <div class="hero-copy">
           <p class="eyebrow"><span aria-hidden="true"></span> AgentForge Studio</p>
           <h1 id="hero-title">From research<br>to <em>action.</em></h1>
-          <p class="hero-description">Give your AI agent hands to act across the web, GitHub, Slack, and the services you use.</p>
+          <p class="hero-description">Connect Gemini, tell AgentForge what to do, and review the actions it plans across the web, GitHub, and Slack.</p>
           <div class="hero-actions">
             <a href="#tasks" class="button button-copper">Try an action</a>
             <button type="button" class="button button-dark" id="hero-run"><span class="play" aria-hidden="true"></span>Run sample workflow</button>
@@ -60,9 +62,26 @@
         </div>
       </section>
 
+      <section class="connection-section" id="ai-model" aria-labelledby="model-title">
+        <div class="section-head">
+          <div><h2 id="model-title">AI Model</h2><p>Google Gemini interprets your request and picks the AgentForge tools to run.</p></div>
+          <span class="badge badge-neutral" id="model-indicator">Checking vault</span>
+        </div>
+        <div class="panel connection-panel">
+          <form id="model-form">
+            <label class="form-field" for="model-key">Gemini API key
+              <input id="model-key" name="credential" type="password" required maxlength="1000" autocomplete="new-password" spellcheck="false" aria-describedby="model-help" placeholder="Paste your Google AI Studio API key">
+            </label>
+            <button type="submit" class="button button-primary" id="model-save">Connect Gemini</button>
+          </form>
+          <div class="connection-meta"><p id="model-help">Studio sends your request and relevant tool results to Gemini. It saves the key in your local encrypted vault.</p><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Get a Gemini key</a></div>
+          <p class="task-status" id="model-status" role="status"></p>
+        </div>
+      </section>
+
       <section class="connection-section" id="connections" aria-labelledby="connection-title">
         <div class="section-head">
-          <div><h2 id="connection-title">API &amp; Connections</h2><p>Add a credential for the service you want AgentForge to use.</p></div>
+          <div><h2 id="connection-title">Service Connections</h2><p>Add a GitHub token, Slack webhook, or optional Exa search key.</p></div>
         </div>
         <div class="panel connection-panel">
           <form id="connection-form">
@@ -89,16 +108,18 @@
 
       <section class="task-section" id="tasks" aria-labelledby="task-title">
         <div class="section-head">
-          <div><h2 id="task-title">What should AgentForge do?</h2><p id="task-help">Type a search or URL, or choose an action that writes to a connected service.</p></div>
+          <div><h2 id="task-title">What should AgentForge do?</h2><p id="task-help">Try a short search or ask Gemini to plan a task across tools.</p></div>
+          <span class="badge badge-neutral" id="task-mode">Checking model</span>
         </div>
         <div class="panel task-panel">
           <form id="task-form">
             <label for="task-input" class="screen-reader">Your request</label>
-            <input id="task-input" name="request" type="text" aria-describedby="task-help" placeholder="Search the web for Python agent tools" required maxlength="500" autocomplete="off">
+            <input id="task-input" name="request" type="text" aria-describedby="task-help" placeholder="search Saada Pay" required maxlength="500" autocomplete="off">
             <button type="submit" class="button button-primary" id="task-submit"><span class="play" aria-hidden="true"></span>Run task</button>
           </form>
           <div class="task-examples" role="group" aria-label="Example requests">
-            <button type="button" class="task-example" data-request="Search the web for Python agent tools">Search the web</button>
+            <button type="button" class="task-example" data-request="search Saada Pay">Search Saada Pay</button>
+            <button type="button" class="task-example" data-request="Search Saada Pay, then summarize what it does">Search and summarize</button>
             <button type="button" class="task-example" data-request="Read https://example.com">Read a webpage</button>
             <button type="button" class="task-example" data-request="Run the release briefing">Try the offline demo</button>
           </div>

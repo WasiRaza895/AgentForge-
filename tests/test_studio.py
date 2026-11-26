@@ -1,3 +1,4 @@
+import json
 from unittest.mock import Mock
 
 import httpx
@@ -5,6 +6,7 @@ import pytest
 
 from agentforge import utils
 from agentforge.studio import run_demo, run_task
+from agentforge.studio_ai import DEFAULT_MODEL, Gemini, MissingModel, ModelError, get_model, save_model_key
 from agentforge.studio_connections import MissingConnection, connection_status, run_reviewed_action, save_connection
 
 
@@ -26,7 +28,7 @@ def test_plain_language_search_uses_no_api_key(monkeypatch):
     monkeypatch.setattr("agentforge.pipeline.get_platform", lambda name: platform)
     monkeypatch.setattr("agentforge.studio.connection_status", lambda: {"exa": False})
 
-    report = run_task("Could you please search the web for Python tools")
+    report = run_task("Could you please search the web for Python tools", use_ai=False)
     assert report["success"] is True
     assert report["log"][0]["result"][0]["title"] == "Python tools"
     platform.search.assert_called_once_with("Python tools", limit=5, use_exa=False)
@@ -37,7 +39,7 @@ def test_plain_language_read_uses_direct_http(monkeypatch):
     platform.read.return_value = {"success": True, "content": "Example page"}
     monkeypatch.setattr("agentforge.pipeline.get_platform", lambda name: platform)
 
-    report = run_task("Read example.com")
+    report = run_task("Read example.com", use_ai=False)
     assert report["success"] is True
     assert report["log"][0]["result"]["content"] == "Example page"
     platform.read.assert_called_once_with("https://example.com", use_jina=False)
@@ -50,7 +52,7 @@ def test_plain_language_offline_demo():
 @pytest.mark.parametrize("request_text", ["Send an email", "Read file:///local", "Read https://user:password@example.com"])
 def test_task_rejects_unsupported_requests(request_text):
     with pytest.raises(ValueError, match="Try"):
-        run_task(request_text)
+        run_task(request_text, use_ai=False)
 
 
 @pytest.fixture
@@ -74,7 +76,7 @@ def test_studio_search_uses_a_configured_exa_key(local_vault, monkeypatch):
     platform = Mock()
     platform.search.return_value = [{"title": "Python tools"}]
     monkeypatch.setattr("agentforge.pipeline.get_platform", lambda name: platform)
-    assert run_task("Search for Python tools")["success"] is True
+    assert run_task("Search for Python tools", use_ai=False)["success"] is True
     platform.search.assert_called_once_with("Python tools", limit=5, use_exa=True)
 
 
@@ -114,3 +116,59 @@ def test_reviewed_slack_send_uses_the_saved_webhook(local_vault, monkeypatch):
     monkeypatch.setattr("agentforge.platforms.slack.httpx.Client", Mock(return_value=client))
     assert run_reviewed_action("slack", True, "", "", "Reviewed update")["success"] is True
     client.post.assert_called_once_with(webhook, json={"text": "Reviewed update"})
+
+
+def test_short_search_works_without_a_model(local_vault, monkeypatch):
+    search = Mock()
+    search.search.return_value = [{"title": "SadaPay"}]
+    monkeypatch.setattr("agentforge.pipeline.get_platform", lambda _: search)
+    assert run_task("search Saada Pay")["success"] is True
+    search.search.assert_called_once_with("Saada Pay", limit=5, use_exa=False)
+    with pytest.raises(MissingModel, match="Gemini"):
+        run_task("Search Saada Pay, then summarize what it does")
+
+
+def test_model_setup_checks_key_and_saves_it_locally(local_vault, monkeypatch):
+    get = Mock(side_effect=[httpx.Response(403), httpx.Response(200)])
+    monkeypatch.setattr("agentforge.studio_ai.httpx.get", get)
+    with pytest.raises(ModelError, match="Google AI Studio"):
+        save_model_key("test-bad-key")
+    assert get_model() is None
+
+    save_model_key("test-gemini-key")
+    assert get_model() == Gemini("test-gemini-key")
+    assert get.call_args.args[0].endswith(DEFAULT_MODEL)
+    assert get.call_args.kwargs["headers"] == {"x-goog-api-key": "test-gemini-key"}
+    assert b"test-gemini-key" not in (local_vault / "credentials.json").read_bytes()
+
+
+def test_gemini_plan_searches_summarizes_and_waits_for_review(local_vault, monkeypatch):
+    steps = [{"action": "search", "input": "Saada Pay"}, {"action": "summarize", "input": "what it does"}, {"action": "slack_message", "input": ""}]
+    summary = "SadaPay result from https://example.com/source."
+
+    def candidate(value):
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": value}]}}]})
+
+    monkeypatch.setattr("agentforge.studio_ai.httpx.get", Mock(return_value=httpx.Response(200)))
+    post = Mock(side_effect=[candidate(json.dumps({"steps": steps, "message": ""})), candidate(summary)])
+    monkeypatch.setattr("agentforge.studio_ai.httpx.post", post)
+    save_model_key("test-gemini-key")
+    search = Mock()
+    search.search.return_value = [{"title": "SadaPay", "url": "https://example.com/source"}]
+    lookup = Mock(return_value=search)
+    monkeypatch.setattr("agentforge.pipeline.get_platform", lookup)
+
+    report = run_task("Search Saada Pay and send a summary to Slack")
+
+    assert report["success"] and report["model"] == "Google Gemini"
+    assert report["summary"] == summary
+    assert report["draft"] == {"provider": "slack", "repo": "", "title": "", "content": summary}
+    lookup.assert_called_once_with("search")
+    search.write.assert_not_called()
+    assert post.call_args_list[0].kwargs["json"]["generationConfig"]["responseMimeType"] == "application/json"
+    assert "https://example.com/source" in post.call_args_list[1].kwargs["json"]["contents"][0]["parts"][0]["text"]
+
+
+def test_google_key_is_not_forwarded_to_the_exa_service(local_vault):
+    with pytest.raises(ValueError, match="AI Model"):
+        save_connection("exa", "AIza-example-old-google-api-key")

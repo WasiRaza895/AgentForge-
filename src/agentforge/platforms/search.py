@@ -1,5 +1,6 @@
 import httpx
 import re
+from html import unescape
 from typing import Dict, Any, List
 from agentforge.platforms.base import BasePlatform
 from agentforge.utils import sanitize_text
@@ -96,9 +97,9 @@ class SearchPlatform(BasePlatform):
                         snippet = re.sub(r'<[^>]*>', '', raw_snippet).strip()
                         
                     results.append({
-                        "title": sanitize_text(title),
+                        "title": unescape(sanitize_text(title)),
                         "url": clean_url,
-                        "snippet": sanitize_text(snippet)
+                        "snippet": unescape(sanitize_text(snippet))
                     })
                         
                 return results if results else [{"error": "No search results found."}]

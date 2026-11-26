@@ -2,7 +2,7 @@
 
 **Give your AI agent hands to act on the internet—not just eyes to read it.**
 
-AgentForge is a local-first Python CLI for reading, writing, searching, notifying, and running workflows across platforms from one interface. An AI assistant can call the CLI to act on results, such as searching for updates and posting a digest to Slack or opening a GitHub issue. AgentForge Studio lets you try some of the same actions in a browser and review what will reach the connected service.
+AgentForge is a local-first toolkit for reading, writing, searching, notifying, and running workflows across platforms. In Studio, connect Google Gemini and describe a task in plain English. Gemini chooses the tools and AgentForge runs them. You can also call the same AgentForge adapters from the CLI or a YAML workflow.
 
 <p align="center">
   <a href="https://github.com/WasiRaza895/AgentForge-/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/WasiRaza895/AgentForge-/ci.yml?branch=main&style=flat-square&label=tests"></a>
@@ -24,9 +24,15 @@ Agent tools often stop at research. AgentForge adds a shared command surface for
 - **Scriptable output** in text, JSON, CSV, or Markdown.
 - **Local plugins** that can add trusted Python adapters to workflows.
 
-## API & Connections
+## Connect an AI model
 
-In Studio, open **API & Connections** and choose a service. Paste its credential and select **Save locally**. Studio stores it in the same encrypted vault as the CLI and asks you to add it when a write action needs it.
+In Studio, open **AI Model** and paste a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey). Select **Connect Gemini** to check the key and save it in the local encrypted vault. Studio sends your task and the results needed for a summary to Gemini. It uses Gemini 3.5 Flash-Lite to plan the task and AgentForge adapters to perform the steps.
+
+Try `search Saada Pay` or `Search Saada Pay, then summarize what it does`. To try a workflow across services, enter `Search Saada Pay, summarize what it does, then send the summary to Slack`. Studio shows the draft for review before posting. Short searches, webpage reads, and the offline briefing also run directly when Gemini is disconnected.
+
+## Service connections
+
+Use **Service Connections** for credentials that authorize actions on the platforms you use. Choose a service, paste its credential, and select **Save locally**. Studio asks for the missing credential when you open a write action.
 
 | Service | What to add in Studio | What it enables |
 |---|---|---|
@@ -34,7 +40,7 @@ In Studio, open **API & Connections** and choose a service. Paste its credential
 | Slack | An incoming webhook URL for the destination channel | Send a message after you review the content and destination. [Slack setup](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/) |
 | Exa | An Exa API key | Use Exa for web searches. AgentForge can also search via DuckDuckGo without a key. [Exa API](https://docs.exa.ai/reference/search) |
 
-An AI assistant uses its own model connection. AgentForge uses service credentials to carry out actions on those services. The bundled workflow, basic webpage reads, and basic web search work without installing an AI model or adding a key. Use `agentforge doctor` and `agentforge vault` to configure other adapters from the CLI.
+Gemini plans with its model key. GitHub and Slack use their own credentials to carry out actions. Use `agentforge doctor` and `agentforge vault` to configure other adapters from the CLI.
 
 ## Quick start
 
@@ -74,7 +80,7 @@ Start Studio and keep the terminal running while you use it.
 agentforge studio --open
 ```
 
-Under **What should AgentForge do?**, try `Search for Python tools`, `Read https://example.com`, or `Run the release briefing`. Live web tasks need internet access. The bundled briefing runs offline. To take an action, choose **Create a GitHub issue** or **Send a Slack message**, check the details, and confirm. Use **Workflows** to inspect the bundled YAML and copy its JSON output.
+Under **What should AgentForge do?**, try `search Saada Pay`, `Read https://example.com`, or `Run the release briefing`. Live web tasks need internet access. The bundled briefing runs offline. To take an action, choose **Create a GitHub issue** or **Send a Slack message**, check the details, and confirm. Use **Workflows** to inspect the bundled YAML and copy its JSON output.
 
 ### Using AgentForge with an AI assistant
 

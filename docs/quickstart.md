@@ -18,9 +18,9 @@ agentforge --output json pipeline run examples/rss_briefing.yaml
 agentforge studio --open
 ```
 
-In Studio, type `Read https://example.com` or `Search for Python tools`, then select **Run task**. These requests use the internet and require no API key. Type `Run the release briefing` to try the offline demo.
+In Studio, open **AI Model**, paste a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey), and select **Connect Gemini**. Try `Search Saada Pay, then summarize what it does`. A short request such as `search Saada Pay` also runs directly when Gemini is disconnected. Type `Run the release briefing` to try the offline demo.
 
-Use **API & Connections** to add a GitHub access token or Slack incoming webhook URL, then choose the matching write action under **What should AgentForge do?**. Review the destination and content before confirming. Studio uses the same local vault as the CLI.
+Use **Service Connections** to add a GitHub access token or Slack incoming webhook URL, then choose the matching write action under **What should AgentForge do?**. Review the destination and content before confirming. Studio uses the same local vault as the CLI.
 
 ---
 
