@@ -4,7 +4,6 @@ import sys
 from typing import Any, Union, Dict, List
 from rich.console import Console
 from rich.table import Table
-from rich.syntax import Syntax
 from rich.panel import Panel
 
 class OutputFormatter:
@@ -21,7 +20,7 @@ class OutputFormatter:
             return
 
         if format_type == "json":
-            OutputFormatter.to_json(data, console)
+            OutputFormatter.to_json(data)
         elif format_type == "csv":
             OutputFormatter.to_csv(data)
         elif format_type == "markdown":
@@ -30,11 +29,11 @@ class OutputFormatter:
             OutputFormatter.to_text(data, console)
 
     @staticmethod
-    def to_json(data: Any, console: Console) -> None:
-        """Prints data as syntax-highlighted JSON."""
-        json_str = json.dumps(data, indent=2, ensure_ascii=False)
-        syntax = Syntax(json_str, "json", theme="monokai", background_color="default")
-        console.print(syntax)
+    def to_json(data: Any, console: Console | None = None) -> None:
+        """Writes parseable JSON directly to the output stream."""
+        stream = console.file if console is not None else sys.stdout
+        json.dump(data, stream, indent=2)
+        stream.write("\n")
 
     @staticmethod
     def to_csv(data: Any) -> None:

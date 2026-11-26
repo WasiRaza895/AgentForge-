@@ -1,13 +1,6 @@
 # 🔨 AgentForge
 
-<p align="center">
-  <strong>Give your AI agent hands to act on the internet—not just eyes to read it.</strong>
-</p>
-
-<p align="center">
-  A local-first Python CLI for reading, writing, searching, notifying, and running<br />
-  multi-platform workflows from one consistent interface.
-</p>
+A local-first Python toolkit for connecting web reads, searches, and notifications in YAML workflows. Run workflows from the CLI or explore bundled demos in AgentForge Studio, a browser interface powered by the same Python pipeline engine.
 
 <p align="center">
   <a href="https://github.com/WasiRaza895/AgentForge-/actions/workflows/ci.yml"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/WasiRaza895/AgentForge-/ci.yml?branch=main&style=flat-square&label=tests"></a>
@@ -23,12 +16,11 @@
 
 Agent tools often stop at research. AgentForge adds a shared command surface for actions: search the web, read feeds, create GitHub issues, send notifications, post updates, and chain steps together in YAML. Credentials stay in a local encrypted vault, and structured output makes commands easy to consume from scripts and AI coding tools.
 
-- **One CLI:** a consistent interface across 12 platform adapters.
-- **Read and write:** move from gathering context to taking an approved action.
-- **Composable workflows:** connect platform actions with declarative YAML pipelines.
-- **Local-first credentials:** encrypt secrets at rest instead of putting them in workflow files.
-- **Agent-friendly output:** render results as text, JSON, CSV, or Markdown.
-- **Extensible:** add custom platform adapters through the plugin loader.
+- **12 built-in adapters** for web, feeds, search, and platform actions. Some require external tools or account credentials.
+- **YAML workflows** that pass data between steps and report what ran, what failed, and where execution stopped.
+- **Local credentials** stored in an encrypted vault with a key on the same machine.
+- **Scriptable output** in text, JSON, CSV, or Markdown.
+- **Local plugins** that can add trusted Python adapters to workflows.
 
 ## Quick start
 
@@ -47,19 +39,33 @@ Activate the environment and install the project:
 source .venv/bin/activate
 
 # Windows PowerShell
-.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 
 python -m pip install .
 agentforge --version
-agentforge doctor
 ```
 
-Try a read-only command:
+From the repository root, run a workflow with the bundled feeds. It needs no API keys or network connection.
 
 ```bash
+agentforge pipeline validate examples/rss_briefing.yaml
+agentforge --output json pipeline run examples/rss_briefing.yaml
+```
+
+The first step reads three release notes. The second uses the first step's `{feed.metadata.link}` to read two implementation notes. The JSON result includes a log for both steps.
+
+For the browser demo, start Studio and open the URL it prints (by default `http://127.0.0.1:8765`). Select a workflow, inspect its YAML, run it, and review the results or copy the JSON. Studio runs the bundled, read-only demos on your machine.
+
+```bash
+agentforge studio
+```
+
+Try a live read or check which integrations are available locally.
+
+```bash
+agentforge web https://example.com --no-jina
 agentforge search "open-source AI agent tools" --limit 5
-agentforge web https://example.com
-agentforge --output json rss https://hnrss.org/frontpage
+agentforge doctor
 ```
 
 See the [installation guide](docs/install.md) and [quick-start guide](docs/quickstart.md) for more detail.
@@ -105,9 +111,13 @@ agentforge vault list
 
 Use least-privilege credentials and never paste real tokens into committed scripts or issue reports.
 
-## Workflow example
+## Search-to-Slack example
 
-Create `daily_digest.yaml`:
+Set a Slack incoming webhook in the local vault, then save the YAML as `daily_digest.yaml`. Running this workflow sends a message to the configured Slack channel.
+
+```bash
+agentforge vault set slack webhook_url "YOUR_SLACK_WEBHOOK_URL"
+```
 
 ```yaml
 name: Daily AI research digest
@@ -127,7 +137,7 @@ steps:
       message: "Found {results.count} relevant updates."
 ```
 
-Validate and run it:
+Validate the YAML before running the workflow.
 
 ```bash
 agentforge pipeline validate daily_digest.yaml
@@ -144,6 +154,7 @@ src/agentforge/
 ├── plugins/       # Third-party adapter loading
 ├── cli.py         # Click command interface
 ├── pipeline.py    # YAML workflow engine
+├── studio.py      # Local browser workspace for bundled demos
 ├── scheduler.py   # Repeating monitors
 ├── notifier.py    # Named notification channels
 └── vault.py       # Encrypted local credentials

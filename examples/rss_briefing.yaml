@@ -1,0 +1,16 @@
+name: Release briefing
+steps:
+  - name: Read the release feed
+    platform: rss
+    action: read
+    params:
+      target: src/agentforge/studio_assets/feed.xml
+      limit: 3
+    output_var: feed
+  - name: Follow the related feed
+    platform: rss
+    action: read
+    params:
+      target: "{feed.metadata.link}"
+      limit: 2
+    output_var: related

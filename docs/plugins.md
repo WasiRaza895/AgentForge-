@@ -1,6 +1,6 @@
 # Plugin Development Guide
 
-AgentForge is built to be extensible. You can write custom platform integrations, place them in the plugin folder, and they will load dynamically.
+AgentForge loads trusted Python adapters from the local plugin folder when a workflow first references them. Use a lowercase folder name with letters, digits, underscores, or hyphens. Install plugins from sources you trust because an adapter runs Python code on your machine.
 
 ---
 
@@ -61,8 +61,17 @@ class MyCustomPlatform(BasePlatform):
 ---
 
 ## 3. Discovered and Loaded Plugins
-List all successfully loaded plugins:
+List the plugin manifests available on this machine.
 ```bash
 agentforge plugin list
 ```
-AgentForge automatically scans `~/.agentforge/plugins/` on startup.
+To use the scaffold from step 1, save the following as `custom.yaml` and run `agentforge pipeline run custom.yaml`. The `platform` name is the plugin's folder name.
+
+```yaml
+name: Custom adapter example
+steps:
+  - platform: custom_platform
+    action: read
+    params:
+      target: demo
+```

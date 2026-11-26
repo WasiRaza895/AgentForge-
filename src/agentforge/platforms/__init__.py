@@ -1,3 +1,4 @@
+import re
 from typing import Dict, Type, List
 from agentforge.platforms.base import BasePlatform
 
@@ -41,8 +42,15 @@ def get_platform_class(name: str) -> Type[BasePlatform]:
     elif name == "telegram":
         from agentforge.platforms.telegram import TelegramPlatform
         return TelegramPlatform
-    else:
-        raise ValueError(f"Unknown platform: {name}")
+    if re.fullmatch(r"[a-z0-9][a-z0-9_-]*", name):
+        from agentforge.plugins.loader import PluginLoader
+        from agentforge.utils import get_config_dir
+
+        if (get_config_dir() / "plugins" / name).is_dir():
+            platform = PluginLoader().load_plugin_platform(name)
+            if isinstance(platform, type) and issubclass(platform, BasePlatform):
+                return platform
+    raise ValueError(f"Unknown platform: {name}")
 
 def get_platform(name: str) -> BasePlatform:
     """Instantiates and returns a platform instance by name."""

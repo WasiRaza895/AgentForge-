@@ -1,14 +1,11 @@
-import pytest
-from rich.console import Console
+import json
 from agentforge.output import OutputFormatter
 
 def test_output_render_json(capsys):
-    data = {"key": "value"}
+    data = {"key": "Café " * 500}
     OutputFormatter.render(data, format_type="json")
     captured = capsys.readouterr()
-    # Check if value exists in output
-    assert "key" in captured.out
-    assert "value" in captured.out
+    assert json.loads(captured.out) == data
 
 def test_output_render_csv(capsys):
     data = [{"header1": "val1", "header2": "val2"}]
