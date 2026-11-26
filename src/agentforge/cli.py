@@ -1,5 +1,6 @@
 import click
 import sys
+import yaml
 from typing import Optional
 from rich.console import Console
 from rich.panel import Panel
@@ -32,7 +33,7 @@ class CLIContext:
 @click.option('--version', '-v', is_flag=True, help='Show AgentForge version.')
 @click.pass_context
 def cli(ctx, output, version):
-    """🔨 AgentForge CLI: Read, Write, and Automate across the internet."""
+    """AgentForge CLI: Read, Write, and Automate across the internet."""
     console = Console()
     
     if version:
@@ -43,7 +44,12 @@ def cli(ctx, output, version):
     
     if ctx.invoked_subcommand is None:
         # Show Banner and Help
-        banner_text = Text(BANNER, style="magenta bold")
+        try:
+            BANNER.encode(console.encoding)
+            banner = BANNER
+        except UnicodeEncodeError:
+            banner = "AgentForge"
+        banner_text = Text(banner, style="magenta bold")
         console.print(Panel(banner_text, border_style="magenta", subtitle=f"Version {__version__}"))
         click.echo(ctx.get_help())
 
@@ -321,6 +327,30 @@ def doctor():
 
 # Install
 @cli.command()
+@click.option('--port', default=8765, type=click.IntRange(0, 65535), show_default=True)
+@click.option('--open', 'open_browser', is_flag=True, help='Open Studio in your default browser.')
+def studio(port, open_browser):
+    """Start a local browser workspace for tasks, actions, and demos."""
+    import webbrowser
+
+    from agentforge.studio import create_server
+
+    try:
+        server = create_server(port)
+    except OSError as exc:
+        raise click.ClickException(f"Could not start Studio on port {port}: {exc}") from exc
+    with server:
+        url = f"http://127.0.0.1:{server.server_port}"
+        click.echo(f"AgentForge Studio: {url}")
+        if open_browser:
+            webbrowser.open(url)
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            click.echo("Studio stopped.")
+
+
+@cli.command()
 @click.option('--safe', is_flag=True, help='Safe mode (detect only, no installations).')
 @click.option('--skill', help='Copy SKILL.md playbook to target path.')
 def install(safe, skill):
@@ -390,19 +420,26 @@ def pipeline():
 @click.pass_context
 def pipeline_run(ctx, yaml_file):
     """Execute pipeline YAML workflow."""
-    p = Pipeline(config_path=yaml_file)
-    res = p.run()
+    try:
+        res = Pipeline(config_path=yaml_file).run()
+    except (OSError, yaml.YAMLError) as exc:
+        res = {"success": False, "error": str(exc)}
     OutputFormatter.render(res, format_type=ctx.obj.output_format)
+    if not res["success"]:
+        ctx.exit(1)
 
 @pipeline.command(name='validate')
 @click.argument('yaml_file')
 @click.pass_context
 def pipeline_validate(ctx, yaml_file):
     """Validate pipeline YAML structure."""
-    p = Pipeline(config_path=yaml_file)
-    errors = p.validate()
+    try:
+        errors = Pipeline(config_path=yaml_file).validate()
+    except (OSError, yaml.YAMLError) as exc:
+        errors = [str(exc)]
     if errors:
         OutputFormatter.render({"valid": False, "errors": errors}, format_type=ctx.obj.output_format)
+        ctx.exit(1)
     else:
         OutputFormatter.render({"valid": True, "notes": "Pipeline structure is valid."}, format_type=ctx.obj.output_format)
 

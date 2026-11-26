@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Forge implementation notes</title>
+    <link>https://example.com/implementation</link>
+    <description>Sample implementation notes for the AgentForge demo.</description>
+    <item>
+      <title>Custom adapters can join a workflow</title>
+      <link>https://example.com/implementation/plugin-adapters</link>
+      <description>A workflow resolves a trusted adapter from the local plugins folder.</description>
+    </item>
+    <item>
+      <title>Failures reach the command exit status</title>
+      <link>https://example.com/implementation/exit-status</link>
+      <description>Automation can detect a failed workflow from its exit code and inspect individual step results.</description>
+    </item>
+  </channel>
+</rss>

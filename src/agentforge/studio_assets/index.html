@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Search, read, take approved actions, and run AgentForge workflows in a local browser workspace.">
+  <title>AgentForge Studio</title>
+  <link rel="stylesheet" href="studio.css">
+  <script src="forge.js" defer></script>
+  <script src="studio.js" defer></script>
+  <script src="model.js" defer></script>
+  <script src="connections.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <aside class="rail">
+    <a class="brand" href="#overview" aria-label="AgentForge overview">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span>AgentForge<small>WORKFLOW STUDIO</small></span>
+    </a>
+    <nav class="rail-nav" aria-label="Workspace">
+      <div class="rail-label">Workspace</div>
+      <a href="#overview" class="nav-link active" aria-current="location"><span class="icon icon-grid" aria-hidden="true"></span>Overview</a>
+      <a href="#ai-model" class="nav-link"><span class="icon icon-code" aria-hidden="true"></span>AI Model</a>
+      <a href="#connections" class="nav-link"><span class="icon icon-lock" aria-hidden="true"></span>Service Connections</a>
+      <a href="#tasks" class="nav-link"><span class="icon icon-code" aria-hidden="true"></span>Tasks</a>
+      <a href="#workflows" class="nav-link"><span class="icon icon-flow" aria-hidden="true"></span>Workflows</a>
+      <a href="#history" class="nav-link"><span class="icon icon-clock" aria-hidden="true"></span>Run history</a>
+    </nav>
+    <div class="rail-bottom">
+      <button class="nav-link quiet" type="button" data-open="setup"><span class="icon icon-code" aria-hidden="true"></span>CLI setup</button>
+      <a class="nav-link quiet" href="https://github.com/WasiRaza895/AgentForge-" target="_blank" rel="noopener"><span class="icon icon-repo" aria-hidden="true"></span>GitHub repository</a>
+      <div class="rail-foot"><span class="status-dot" aria-hidden="true"></span>Local workspace</div>
+    </div>
+  </aside>
+
+  <div class="workspace" id="overview">
+    <header class="topbar">
+      <a class="mobile-brand" href="#overview"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>AgentForge</a>
+      <div class="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span><strong id="location-label">Overview</strong></div>
+      <div class="top-actions">
+        <span class="engine-status"><span class="status-dot" aria-hidden="true"></span>Local engine</span>
+        <a href="#ai-model" class="button button-small button-primary"><span class="icon icon-code" aria-hidden="true"></span>AI Model</a>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="stage">
+          <canvas id="forge-canvas" aria-hidden="true"></canvas>
+          <button class="motion-button" type="button" aria-pressed="false" id="motion-button">Pause motion</button>
+        </div>
+        <div class="hero-copy">
+          <p class="eyebrow"><span aria-hidden="true"></span> AgentForge Studio</p>
+          <h1 id="hero-title">From research<br>to <em>action.</em></h1>
+          <p class="hero-description">Connect Gemini, tell AgentForge what to do, and review the actions it plans across the web, GitHub, and Slack.</p>
+          <div class="hero-actions">
+            <a href="#tasks" class="button button-copper">Try an action</a>
+            <button type="button" class="button button-dark" id="hero-run"><span class="play" aria-hidden="true"></span>Run sample workflow</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="connection-section" id="ai-model" aria-labelledby="model-title">
+        <div class="section-head">
+          <div><h2 id="model-title">AI Model</h2><p>Google Gemini interprets your request and picks the AgentForge tools to run.</p></div>
+          <span class="badge badge-neutral" id="model-indicator">Checking vault</span>
+        </div>
+        <div class="panel connection-panel">
+          <form id="model-form">
+            <label class="form-field" for="model-key">Gemini API key
+              <input id="model-key" name="credential" type="password" required maxlength="1000" autocomplete="new-password" spellcheck="false" aria-describedby="model-help" placeholder="Paste your Google AI Studio API key">
+            </label>
+            <button type="submit" class="button button-primary" id="model-save">Connect Gemini</button>
+          </form>
+          <div class="connection-meta"><p id="model-help">Studio sends your request and relevant tool results to Gemini. It saves the key in your local encrypted vault.</p><a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Get a Gemini key</a></div>
+          <p class="task-status" id="model-status" role="status"></p>
+        </div>
+      </section>
+
+      <section class="connection-section" id="connections" aria-labelledby="connection-title">
+        <div class="section-head">
+          <div><h2 id="connection-title">Service Connections</h2><p>Add a GitHub token, Slack webhook, or optional Exa search key.</p></div>
+        </div>
+        <div class="panel connection-panel">
+          <form id="connection-form">
+            <label class="form-field" for="connection-provider">Service
+              <select id="connection-provider" name="provider">
+                <option value="github">GitHub</option>
+                <option value="slack">Slack</option>
+                <option value="exa">Exa search</option>
+              </select>
+            </label>
+            <label class="form-field" for="connection-secret"><span id="credential-label">GitHub access token</span>
+              <input id="connection-secret" name="credential" type="password" required maxlength="1000" autocomplete="new-password" spellcheck="false" aria-describedby="credential-help">
+            </label>
+            <button type="submit" class="button button-primary" id="connection-save">Save locally</button>
+          </form>
+          <div class="connection-meta">
+            <p><span id="credential-help">Use a token with Issues write permission for the repository.</span> <a id="credential-guide" href="https://docs.github.com/en/rest/issues/issues#create-an-issue" target="_blank" rel="noreferrer">Setup guide</a></p>
+            <span class="badge badge-neutral" id="connection-indicator">Checking vault</span>
+          </div>
+          <p class="task-status" id="connection-status" role="status"></p>
+          <div class="connection-footer"><p class="storage-note">Credentials stay in the encrypted vault on this computer. Search, webpage reads, and sample workflows work without a key.</p><button type="button" class="button button-small" data-open="setup">CLI setup</button></div>
+        </div>
+      </section>
+
+      <section class="task-section" id="tasks" aria-labelledby="task-title">
+        <div class="section-head">
+          <div><h2 id="task-title">What should AgentForge do?</h2><p id="task-help">Try a short search or ask Gemini to plan a task across tools.</p></div>
+          <span class="badge badge-neutral" id="task-mode">Checking model</span>
+        </div>
+        <div class="panel task-panel">
+          <form id="task-form">
+            <label for="task-input" class="screen-reader">Your request</label>
+            <input id="task-input" name="request" type="text" aria-describedby="task-help" placeholder="search Saada Pay" required maxlength="500" autocomplete="off">
+            <button type="submit" class="button button-primary" id="task-submit"><span class="play" aria-hidden="true"></span>Run task</button>
+          </form>
+          <div class="task-examples" role="group" aria-label="Example requests">
+            <button type="button" class="task-example" data-request="search Saada Pay">Search Saada Pay</button>
+            <button type="button" class="task-example" data-request="Search Saada Pay, then summarize what it does">Search and summarize</button>
+            <button type="button" class="task-example" data-request="Read https://example.com">Read a webpage</button>
+            <button type="button" class="task-example" data-request="Run the release briefing">Try the offline demo</button>
+          </div>
+          <p id="task-status" class="task-status" role="status"></p>
+          <div id="task-output" class="task-output" hidden></div>
+          <div class="write-actions">
+            <button type="button" class="button button-small" data-action-provider="github"><span class="icon icon-repo" aria-hidden="true"></span>Create a GitHub issue</button>
+            <button type="button" class="button button-small" data-action-provider="slack"><span class="icon icon-flow" aria-hidden="true"></span>Send a Slack message</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="workflow-section" id="workflows" aria-labelledby="workflow-title">
+        <div class="section-head">
+          <div><h2 id="workflow-title">Workflows</h2><p>Explore and run bundled demos with sample data.</p></div>
+          <span class="badge badge-neutral">No credentials required</span>
+        </div>
+        <div class="workflow-grid">
+          <div class="panel library" aria-labelledby="library-title">
+            <div class="panel-head"><h3 id="library-title">Workflow library</h3><span class="quiet-count">2 workflows</span></div>
+            <button type="button" class="workflow-choice selected" data-workflow="briefing" aria-pressed="true">
+              <span class="tile-icon tile-warm"><span class="icon icon-flow" aria-hidden="true"></span></span>
+              <span class="workflow-text"><strong>Release briefing</strong><small>Follow a link from one feed into the next.</small></span>
+              <span class="workflow-tag">2 steps</span>
+            </button>
+            <button type="button" class="workflow-choice" data-workflow="scan" aria-pressed="false">
+              <span class="tile-icon tile-green"><span class="icon icon-feed" aria-hidden="true"></span></span>
+              <span class="workflow-text"><strong>Release feed scan</strong><small>Read the latest entries in a sample feed.</small></span>
+              <span class="workflow-tag">1 step</span>
+            </button>
+            <div class="panel-note"><span class="icon icon-lock" aria-hidden="true"></span>Bundled feeds run locally and use sample data.</div>
+          </div>
+
+          <div class="panel inspector" aria-labelledby="inspector-title">
+            <div class="panel-head">
+              <div><p class="panel-label">Execution inspector</p><h3 id="inspector-title">Release briefing</h3></div>
+              <button type="button" class="button button-primary button-small" id="inspector-run"><span class="play" aria-hidden="true"></span>Run workflow</button>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Workflow details">
+              <button type="button" role="tab" id="steps-tab" aria-controls="steps-panel" aria-selected="true">Steps</button>
+              <button type="button" role="tab" id="yaml-tab" aria-controls="yaml-panel" aria-selected="false" tabindex="-1">YAML</button>
+              <button type="button" role="tab" id="output-tab" aria-controls="output-panel" aria-selected="false" tabindex="-1">Output</button>
+            </div>
+            <div id="steps-panel" class="tab-panel" role="tabpanel" aria-labelledby="steps-tab" tabindex="0"><ol id="step-list"></ol></div>
+            <div id="yaml-panel" class="tab-panel" role="tabpanel" aria-labelledby="yaml-tab" tabindex="0" hidden>
+              <div class="code-actions"><button id="copy-yaml" class="button button-small" type="button">Copy YAML</button></div>
+              <pre><code id="yaml-code"></code></pre>
+            </div>
+            <div id="output-panel" class="tab-panel" role="tabpanel" aria-labelledby="output-tab" tabindex="0" hidden>
+              <div class="code-actions"><button id="copy-output" class="button button-small" type="button" hidden>Copy JSON</button></div>
+              <div id="run-results"><p>Run the workflow to view the results.</p></div>
+            </div>
+            <div class="inspector-status" id="run-status" role="status" aria-live="polite">Ready to run</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="history-section" id="history" aria-labelledby="history-title">
+        <div class="section-head"><div><h2 id="history-title">Run history</h2><p>Review runs from this browser session.</p></div></div>
+        <div class="panel history-panel" id="history-panel">
+          <p id="history-empty">No runs yet. Run a workflow to see it here.</p>
+          <ul id="history-list"></ul>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="action-dialog" aria-labelledby="action-title">
+    <div class="dialog-head"><h2 id="action-title">Review action</h2><form method="dialog"><button type="submit" class="button button-small" id="close-action">Close</button></form></div>
+    <div id="action-setup" hidden>
+      <p id="action-setup-message"></p>
+      <button type="button" class="button button-primary" id="configure-action">Add credential</button>
+    </div>
+    <form id="action-form">
+      <p id="action-destination"></p>
+      <label class="form-field" id="repo-field" for="action-repo">Repository <input id="action-repo" name="repo" type="text" placeholder="owner/repo" maxlength="160"></label>
+      <label class="form-field" id="title-field" for="action-issue-title">Issue title <input id="action-issue-title" name="title" type="text" maxlength="256"></label>
+      <label class="form-field" for="action-content"><span id="action-content-label">Message</span><textarea id="action-content" name="content" rows="5" maxlength="4000"></textarea></label>
+      <label class="confirm-action"><input id="action-confirm" name="confirmed" type="checkbox" required> I’ve reviewed the destination and content.</label>
+      <button type="submit" class="button button-primary" id="action-submit">Run action</button>
+    </form>
+    <div id="action-status" class="task-status" role="status"></div>
+  </dialog>
+
+  <dialog id="setup" aria-labelledby="setup-title">
+    <div class="dialog-head"><div><p class="panel-label">Local workspace</p><h2 id="setup-title">CLI setup</h2></div><form method="dialog"><button type="submit" class="button button-small">Close</button></form></div>
+    <p>Install AgentForge from the repository once, then launch Studio. Keep the terminal running while you use it.</p>
+    <pre><code>python -m pip install .
+agentforge studio --open</code></pre>
+    <p>Run the same release briefing from the root of the checkout.</p>
+    <pre><code>agentforge --output json pipeline run examples/rss_briefing.yaml</code></pre>
+  </dialog>
+</body>
+</html>

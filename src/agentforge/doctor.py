@@ -80,7 +80,7 @@ class Doctor:
     def diagnose(self) -> None:
         """Executes full diagnostic suite and prints report panels."""
         self.console.print(Panel.fit(
-            "🔨 [bold white]AgentForge Diagnostics Tool[/bold white] 🔨\n"
+            "[bold white]AgentForge Diagnostics Tool[/bold white]\n"
             "Checking all systems, vault configurations, and connections.",
             border_style="magenta"
         ))

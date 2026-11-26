@@ -5,12 +5,22 @@ Get up and running with AgentForge in under 5 minutes.
 ---
 
 ## Step 1: Install & Diagnostics
-Install the tool, download default CLI dependencies, and run health check:
+Install AgentForge and check which integrations are available.
 ```bash
 pip install -e .
-agentforge install
 agentforge doctor
 ```
+
+From the repository root, try the release briefing with bundled data or open Studio.
+
+```bash
+agentforge --output json pipeline run examples/rss_briefing.yaml
+agentforge studio --open
+```
+
+In Studio, open **AI Model**, paste a Gemini API key from [Google AI Studio](https://aistudio.google.com/app/apikey), and select **Connect Gemini**. Try `Search Saada Pay, then summarize what it does`. A short request such as `search Saada Pay` also runs directly when Gemini is disconnected. Type `Run the release briefing` to try the offline demo.
+
+Use **Service Connections** to add a GitHub access token or Slack incoming webhook URL, then choose the matching write action under **What should AgentForge do?**. Review the destination and content before confirming. Studio uses the same local vault as the CLI.
 
 ---
 
@@ -39,7 +49,7 @@ agentforge notify send slack-channel "Hello Slack from AgentForge!"
 ---
 
 ## Step 4: Write Custom YAML Pipeline
-Pipelines allow automated sequential tasks. Create a file named `hackernews.yaml`:
+Create `hackernews.yaml` to search for updates and send the count to Slack. Store the Slack webhook under `slack webhook_url` with `agentforge vault set` for this direct adapter call.
 
 ```yaml
 name: "HN Search & Notify Pipeline"
@@ -56,7 +66,7 @@ steps:
     platform: slack
     action: send
     params:
-      message: "Here are the latest LLM agent search results:\n\n{search_results}"
+      message: "Found {search_results.count} recent results."
 ```
 
 Run the pipeline:

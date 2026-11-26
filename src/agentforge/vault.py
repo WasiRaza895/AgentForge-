@@ -1,6 +1,6 @@
 import json
-import base64
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Dict, Any, Optional
 from cryptography.fernet import Fernet
 from agentforge.utils import ensure_config_dir
@@ -45,12 +45,13 @@ class CredentialVault:
         """Encrypts and saves the credential database."""
         serialized = json.dumps(db)
         encrypted_bytes = self.cipher.encrypt(serialized.encode())
-        self.db_path.write_text(encrypted_bytes.decode())
+        with NamedTemporaryFile(dir=self.config_dir, delete=False) as temporary:
+            temp_path = Path(temporary.name)
         try:
-            # Restrict db file to owner read/write only (0o600)
-            self.db_path.chmod(0o600)
-        except Exception:
-            pass
+            temp_path.write_bytes(encrypted_bytes)
+            temp_path.replace(self.db_path)
+        finally:
+            temp_path.unlink(missing_ok=True)
 
     def set(self, platform: str, key: str, value: str) -> None:
         """Stores a credential value for a specific platform."""

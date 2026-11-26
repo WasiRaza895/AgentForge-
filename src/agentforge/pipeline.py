@@ -3,6 +3,9 @@ import re
 from typing import Dict, Any, List, Optional
 from agentforge.platforms import get_platform
 
+WRITE_ACTIONS = {"write", "send", "post", "reply", "create-issue", "create-pr", "comment"}
+
+
 class Pipeline:
     """YAML-based workflow engine to validate and run sequential, multi-platform agent actions."""
     
@@ -19,23 +22,41 @@ class Pipeline:
         errors = []
         if not self.config:
             return ["Pipeline configuration is empty."]
+        if not isinstance(self.config, dict):
+            return ["Pipeline configuration must be a mapping."]
 
         if "name" not in self.config:
             errors.append("Pipeline requires a 'name'.")
             
         steps = self.config.get("steps")
         if not steps or not isinstance(steps, list):
-            return ["Pipeline requires a 'steps' list."]
+            return errors + ["Pipeline requires a 'steps' list."]
 
         for idx, step in enumerate(steps):
+            if not isinstance(step, dict):
+                errors.append(f"[Step {idx}] Expected a mapping.")
+                continue
             step_name = step.get("name", f"Step {idx}")
             platform = step.get("platform")
             action = step.get("action")
             
             if not platform:
                 errors.append(f"[{step_name}] Missing 'platform' parameter.")
+            elif not isinstance(platform, str):
+                errors.append(f"[{step_name}] 'platform' must be a string.")
             if not action:
                 errors.append(f"[{step_name}] Missing 'action' parameter.")
+            elif not isinstance(action, str) or action not in WRITE_ACTIONS | {"read", "search"}:
+                errors.append(f"[{step_name}] Unsupported action: {action}.")
+            params = step.get("params", {})
+            if not isinstance(params, dict) or any(not isinstance(key, str) for key in params):
+                errors.append(f"[{step_name}] 'params' must be a mapping with string keys.")
+            elif action == "read" and not params.get("target"):
+                errors.append(f"[{step_name}] Missing 'target' in read params.")
+            elif action == "search" and not params.get("query"):
+                errors.append(f"[{step_name}] Missing 'query' in search params.")
+            if "output_var" in step and not isinstance(step["output_var"], str):
+                errors.append(f"[{step_name}] 'output_var' must be a string.")
 
         return errors
 
@@ -62,17 +83,17 @@ class Pipeline:
                 try:
                     for key in path[1:]:
                         if isinstance(obj, dict):
-                            obj = obj.get(key)
+                            obj = obj[key]
                         elif isinstance(obj, list):
-                            obj = obj[int(key)]
+                            obj = len(obj) if key == "count" else obj[int(key)]
                         else:
-                            obj = getattr(obj, key)
+                            raise TypeError("Expected a mapping or list.")
                     
                     # Replace in string. If the value itself is an object and there's no other text, return it directly.
                     if len(placeholders) == 1 and val == f"{{{placeholder}}}":
                         return obj
                     resolved_val = resolved_val.replace(f"{{{placeholder}}}", str(obj))
-                except Exception:
+                except (KeyError, IndexError, TypeError, ValueError):
                     # If path resolution fails, leave as placeholder
                     continue
             return resolved_val
@@ -82,6 +103,25 @@ class Pipeline:
         elif isinstance(val, list):
             return [self._resolve_variables(item, context) for item in val]
         return val
+
+    @staticmethod
+    def _run_step(platform_name: str, action: str, params: dict) -> Any:
+        platform = get_platform(platform_name)
+        if action == "read":
+            target = params.pop("target")
+            return platform.read(target, **params)
+        if action == "search":
+            query = params.pop("query")
+            return platform.search(query, **params)
+
+        content = params.pop("content", None)
+        message = params.pop("message", "")
+        body = params.pop("body", "")
+        if content is None:
+            content = message or body
+        if action not in {"write", "send"}:
+            params["action"] = action
+        return platform.write(content, **params)
 
     def run(self) -> Dict[str, Any]:
         """Executes all pipeline steps sequentially, returning execution log & status."""
@@ -101,9 +141,6 @@ class Pipeline:
             params = step.get("params", {})
             output_var = step.get("output_var")
             
-            # Resolve placeholders in parameters using the run context
-            resolved_params = self._resolve_variables(params, context)
-            
             step_log = {
                 "step": step_name,
                 "platform": platform_name,
@@ -112,24 +149,14 @@ class Pipeline:
             }
             
             try:
-                platform = get_platform(platform_name)
-                # Map action to method call
-                if action == "read":
-                    target = resolved_params.get("target")
-                    if not target:
-                        raise ValueError("Missing 'target' in read params.")
-                    res = platform.read(target, **resolved_params)
-                elif action == "search":
-                    query = resolved_params.get("query")
-                    if not query:
-                        raise ValueError("Missing 'query' in search params.")
-                    res = platform.search(query, **resolved_params)
-                else:
-                    # Write actions or custom actions
-                    content = resolved_params.get("content", "")
-                    res = platform.write(content, **resolved_params)
-                
+                resolved_params = self._resolve_variables(params, context)
+                res = self._run_step(platform_name, action, resolved_params)
                 step_success = res.get("success", True) if isinstance(res, dict) else True
+                if action == "search" and isinstance(res, list) and res:
+                    first_result = res[0]
+                    if isinstance(first_result, dict) and "error" in first_result:
+                        step_success = False
+                        step_log["error"] = first_result["error"]
                 step_log["success"] = step_success
                 step_log["result"] = res
                 

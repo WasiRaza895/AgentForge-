@@ -1,4 +1,5 @@
 import httpx
+import re
 from typing import Dict, Any, List
 from agentforge.platforms.base import BasePlatform
 from agentforge.utils import sanitize_text
@@ -37,7 +38,7 @@ class WebPlatform(BasePlatform):
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
             }
-            with httpx.Client(timeout=10.0, headers=headers, follow_redirects=True) as client:
+            with httpx.Client(timeout=10.0, headers=headers, follow_redirects=kwargs.get("follow_redirects", True)) as client:
                 response = client.get(url)
                 if response.status_code != 200:
                     return {
@@ -47,7 +48,8 @@ class WebPlatform(BasePlatform):
                         "error": f"Failed to fetch. HTTP Status: {response.status_code}"
                     }
                 
-                clean_content = sanitize_text(response.text)
+                visible_html = re.sub(r"<(script|style)\b[^>]*>.*?</\1\s*>", " ", response.text, flags=re.IGNORECASE | re.DOTALL)
+                clean_content = sanitize_text(visible_html)
                 return {
                     "platform": self.name,
                     "action": "read",

@@ -1,5 +1,7 @@
 import os
 import json
+import re
+import httpx
 from typing import Dict, Any, List
 from agentforge.platforms.base import BasePlatform
 from agentforge.utils import run_command, check_tool_installed
@@ -112,6 +114,38 @@ class GitHubPlatform(BasePlatform):
         except Exception:
             return [{"raw": output}]
 
+    def _create_issue_api(self, repo: str, title: str, body: str) -> Dict[str, Any]:
+        result = {"platform": self.name, "action": "create-issue", "success": False}
+        if not re.fullmatch(r"[a-zA-Z0-9-]+/[a-zA-Z0-9_.-]+", repo) or repo.split("/")[1] in {".", ".."}:
+            return {**result, "error": "Enter a GitHub repository as owner/repo."}
+
+        token = CredentialVault().get("github", "token")
+        if not token:
+            return {**result, "error": "Add a GitHub access token to the local vault."}
+
+        try:
+            response = httpx.post(
+                f"https://api.github.com/repos/{repo}/issues",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2026-03-10",
+                },
+                json={"title": title, "body": body},
+                timeout=12.0,
+            )
+        except httpx.HTTPError:
+            return {**result, "error": "GitHub did not confirm the issue. Check the repository before retrying."}
+
+        if response.status_code != 201:
+            return {**result, "error": f"GitHub returned HTTP {response.status_code}. Check the repository and token permissions."}
+
+        try:
+            url = response.json().get("html_url")
+        except (AttributeError, ValueError):
+            url = None
+        return {**result, "success": True, "url": url}
+
     def write(self, content: str, **kwargs) -> Dict[str, Any]:
         """Creates an issue, PR, or comments on an issue.
         
@@ -134,6 +168,8 @@ class GitHubPlatform(BasePlatform):
 
         if action == "create-issue":
             title = kwargs.get("title", "New Issue")
+            if kwargs.get("use_api"):
+                return self._create_issue_api(repo, title, content)
             success, output = self._run_gh_cmd(f"issue create -R {repo} -t \"{title}\" -b \"{content}\"")
         elif action == "create-pr":
             title = kwargs.get("title", "New Pull Request")

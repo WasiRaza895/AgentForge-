@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Forge release notes</title>
+    <link>src/agentforge/studio_assets/related.xml</link>
+    <description>Sample release notes for the AgentForge demo.</description>
+    <item>
+      <title>Workflow parameters now pass through consistently</title>
+      <link>https://example.com/releases/workflow-parameters</link>
+      <description>Search terms, read targets, and message bodies reach their adapters in the expected form.</description>
+    </item>
+    <item>
+      <title>JSON output is ready for scripts</title>
+      <link>https://example.com/releases/json-output</link>
+      <description>Structured output preserves long strings and Unicode characters.</description>
+    </item>
+    <item>
+      <title>Studio runs from the local CLI</title>
+      <link>https://example.com/releases/studio</link>
+      <description>A browser interface runs bundled demo workflows with the Python pipeline engine.</description>
+    </item>
+  </channel>
+</rss>
